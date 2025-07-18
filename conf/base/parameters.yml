@@ -1,0 +1,30 @@
+# Paramètres de traitement
+packet_processing:
+  feature_ban_list: ["password", "secret", "token"]
+  output_directory: "data/04_feature"
+  regex_patterns:
+    imsi: "imsi-\\d{15}"
+    suci: "suci-\\d+-\\d+-\\d+-\\d+-\\d+-\\d+-\\d+"
+
+# Configuration HTTP/2
+http2:
+  frame_types:
+    0: "DATA"
+    1: "HEADERS"
+    2: "PRIORITY"
+    3: "RST_STREAM"
+    4: "SETTINGS"
+    5: "PUSH_PROMISE"
+    6: "PING"
+    7: "GOAWAY"
+    8: "WINDOW_UPDATE"
+    9: "CONTINUATION"
+
+dissection:
+  max_packets_per_file: 10000
+  ban_list:
+    - "password"
+    - "secret"
+    - "token"
+    - "key"
+    - "auth"
