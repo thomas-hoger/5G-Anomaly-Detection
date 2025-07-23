@@ -1,15 +1,6 @@
-# Here you can define all your datasets by using simple YAML syntax.
-#
-# Documentation for this file format can be found in "The Data Catalog"
-# Link: https://docs.kedro.org/en/stable/data/data_catalog.html
-raw_pcap_files:
-  type: MemoryDataset
+# Data catalog for dissection pipeline
 
-dissected_packets:
+# Intermediate dataset for dissected data (will be used by graph_construction)
+dissected_data:
   type: json.JSONDataset
-  filepath: data/02_intermediate/dissected_packets.json
-
-dissection_report:
-  type: json.JSONDataset
-  filepath: data/08_reporting/dissection_report.json
-  
+  filepath: data/02_intermediate/dissected_data.json

@@ -1,30 +1,18 @@
-# Paramètres de traitement
-packet_processing:
-  feature_ban_list: ["password", "secret", "token"]
-  output_directory: "data/04_feature"
-  regex_patterns:
-    imsi: "imsi-\\d{15}"
-    suci: "suci-\\d+-\\d+-\\d+-\\d+-\\d+-\\d+-\\d+"
+# Parameters for dissection pipeline
 
-# Configuration HTTP/2
-http2:
-  frame_types:
-    0: "DATA"
-    1: "HEADERS"
-    2: "PRIORITY"
-    3: "RST_STREAM"
-    4: "SETTINGS"
-    5: "PUSH_PROMISE"
-    6: "PING"
-    7: "GOAWAY"
-    8: "WINDOW_UPDATE"
-    9: "CONTINUATION"
+# Input directory
+input_trace_dir: "data/01_raw/pcap_files"
 
-dissection:
-  max_packets_per_file: 10000
-  ban_list:
-    - "password"
-    - "secret"
-    - "token"
-    - "key"
-    - "auth"
+# Processing parameters  
+buffer_size: 1000
+
+# Banned features list
+banned_features:
+  - "versions"
+  - "scheme"
+  - "ipEndPoints"
+  - "apiPrefix"
+  - "subscribedUeAmbr"
+  - "dnnInfos"
+  - "jwt.alg"
+  - "jwt.typ"

@@ -1,121 +1,78 @@
 """
-This is a boilerplate pipeline 'dissection'
-generated using Kedro 0.19.14
+Kedro nodes for packet dissection pipeline
 """
-
+import json
 import os
-import glob
-import logging
-from typing import Dict, List, Any
-from pathlib import Path
+import pyshark
+from typing import List, Dict, Any
+from tqdm import tqdm
 
-from ...utils.dissection_pyshark import dissect_pcap_file
+from networkanomalydetection.utils.preprocessing import dissect_packet
 
-logger = logging.getLogger(__name__)
 
-def dissect_pcap_files(parameters: Dict[str, Any]) -> List[Dict[str, Any]]:
+def process_pcap_files(
+    input_trace_dir: str, 
+    banned_features: List[str],
+    buffer_size: int = 1000
+) -> Dict[str, List[Dict[str, Any]]]:
     """
-    Dissèque plusieurs fichiers PCAP en les lisant directement du dossier
+    Process all PCAP files in the input directory.
+    
+    Args:
+        input_trace_dir: Directory containing PCAP files
+        banned_features: List of banned feature names
+        buffer_size: Buffer size for processing
+        
+    Returns:
+        Dictionary mapping filename to dissected packet data
     """
+    # Check if input directory exists
+    if not os.path.exists(input_trace_dir):
+        raise FileNotFoundError(f"Le dossier d'entrée n'existe pas: {input_trace_dir}")
     
-    dissection_params = parameters.get("dissection", {})
-    max_packets = dissection_params.get("max_packets_per_file", 10000)
-    ban_list = dissection_params.get("ban_list", [])
+    results = {}
     
-    # Lire les fichiers PCAP directement du dossier
-    pcap_dir = "data/01_raw/pcap_files"
-    pcap_files = {}
-    
-    if not os.path.exists(pcap_dir):
-        logger.error(f"Dossier PCAP non trouvé: {pcap_dir}")
-        return []
-    
-    for filepath in glob.glob(os.path.join(pcap_dir, "*.pcap")):
-        filename = os.path.basename(filepath)
-        pcap_files[filename] = filepath
+    pcap_files = [f for f in os.listdir(input_trace_dir) if f.endswith(('.pcap', '.pcapng'))]
     
     if not pcap_files:
-        logger.error(f"Aucun fichier PCAP trouvé dans {pcap_dir}")
-        return []
+        print(f"Aucun fichier PCAP trouvé dans {input_trace_dir}")
+        return results
     
-    logger.info(f"Fichiers PCAP trouvés: {list(pcap_files.keys())}")
-    
-    all_dissected_packets = []
-    
-    for filename, filepath in pcap_files.items():
-        logger.info(f"Dissection du fichier: {filename}")
+    for filename in tqdm(pcap_files, desc="Fichiers PCAP"):
+        input_file = os.path.join(input_trace_dir, filename)
         
-        packets = dissect_pcap_file(
-            pcap_file=filepath,
-            max_packets=max_packets,
-            ban_list=ban_list
-        )
+        # Initialize result list for this file
+        file_results = []
+        dissected_buffer = []
+        parsed_counter = 0
         
-        for packet in packets:
-            packet["file_info"] = {
-                "filename": filename,
-                "filepath": filepath
-            }
+        pkts = pyshark.FileCapture(input_file, keep_packets=False)
+        file_size = os.path.getsize(input_file)
         
-        all_dissected_packets.extend(packets)
-        logger.info(f"Dissection terminée: {len(packets)} paquets extraits de {filename}")
-    
-    logger.info(f"Dissection globale terminée: {len(all_dissected_packets)} paquets au total")
-    return all_dissected_packets
-
-def generate_dissection_report(dissected_packets: List[Dict[str, Any]],
-                              parameters: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Génère un rapport d'analyse de la dissection
-    """
-    
-    # Statistiques générales
-    total_packets = len(dissected_packets)
-    
-    # Analyse basique
-    unique_sources = set()
-    unique_destinations = set()
-    request_count = 0
-    response_count = 0
-    
-    for packet in dissected_packets:
-        # Statistiques réseau
-        common = packet.get("common", {})
-        unique_sources.add(common.get("ip_src"))
-        unique_destinations.add(common.get("ip_dst"))
+        with tqdm(total=file_size, unit='B', unit_scale=True, desc="Lecture PCAP") as pbar:
+            
+            for pkt in pkts:
+                dissected_pkt = dissect_packet(pkt, banned_features)
+                
+                for dissected_layer in dissected_pkt:
+                    if dissected_layer:
+                        dissected_buffer.append(dissected_layer)
+                
+                if len(dissected_buffer) >= buffer_size:
+                    file_results.extend(dissected_buffer)
+                    dissected_buffer = []
+                
+                parsed_counter += 1
+                pbar.update(pkt.__len__())
+                pbar.set_postfix({'parsed': parsed_counter, 'buffer_size': len(dissected_buffer)})
         
-        # Compter requêtes/réponses
-        if common.get("is_request"):
-            request_count += 1
-        else:
-            response_count += 1
+        # Add remaining buffer contents
+        if dissected_buffer:
+            file_results.extend(dissected_buffer)
+        
+        pkts.close()
+        
+        # Store results for this file
+        results[os.path.splitext(filename)[0]] = file_results
     
-    # Identifier les sources de trafic élevé
-    source_counts = {}
-    for packet in dissected_packets:
-        src = packet.get("common", {}).get("ip_src")
-        if src:
-            source_counts[src] = source_counts.get(src, 0) + 1
-    
-    high_traffic_sources = [src for src, count in source_counts.items() 
-                           if count > total_packets * 0.1]
-    
-    report = {
-        "summary": {
-            "total_packets": total_packets,
-            "unique_sources": len(unique_sources),
-            "unique_destinations": len(unique_destinations),
-            "request_count": request_count,
-            "response_count": response_count
-        },
-        "network_analysis": {
-            "source_distribution": source_counts,
-            "high_traffic_sources": high_traffic_sources
-        },
-        "anomaly_indicators": {
-            "high_traffic_sources": high_traffic_sources
-        }
-    }
-    
-    logger.info(f"Rapport généré: {total_packets} paquets analysés")
-    return report
+    return results
