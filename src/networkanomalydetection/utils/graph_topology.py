@@ -1,199 +1,112 @@
-"""
-Module de construction de graphe topologique pour les paquets réseau (version simplifiée)
-"""
-
+# Ton code manage.py tel quel
 import networkx as nx
-from typing import Dict, List, Tuple, Any, Optional
+from enum import Enum
+from pyvis.network import Network
 
-class NetworkTopologyGraph:
-    """
-    Classe pour gérer le graphe topologique des paquets réseau
-    """
+topology_graph = nx.MultiDiGraph()
+opened_stream = {}
+
+class NodeType(Enum):
+    CENTRAL = 1
+    PARAMETER = 2
+
+def find_node(attr_name: str, attr_value: str) -> int|None:
+    for node_id, attrs in topology_graph.nodes(data=True):
+        if attrs.get(attr_name) == attr_value:
+            return node_id
+    return None
+
+def find_edge(attr_name: str, attr_value: str) -> tuple[int,int]|None:
+    for u, v, attrs in topology_graph.edges(data=True):
+        if attrs.get(attr_name) == attr_value:
+            return (u, v)
+    return None
+
+def find_stream(ip_src: str, ip_dst: str, stream_id: int|None, stream_response: bool|None) -> int|None:
+    central_node_id = None
     
-    def __init__(self):
-        self.topology_graph = nx.MultiDiGraph()
-        self.pending_requests = {}
-    
-    def add_packet(self, central_node_label: str, dissected_pkt: dict) -> int:
-        """
-        Adds a packet to the topology graph by creating a central node and recursively parsing the packet data.
-        Args:
-            central_node_label (str): The label for the central node.
-            dissected_pkt (dict): The dissected packet data in dictionary form.
-        Returns:
-            int: The ID of the central node created in the topology graph.
-        """
-        # Those attributes are made to control the graph and are not inherently packet attributes 
-        is_request = dissected_pkt["common"].pop("is_request")
-        packet_id  = dissected_pkt["common"].pop("packet_id")
-        original_request_id = dissected_pkt["common"].pop("original_request_id")
-
-        central_node_id = None
-
-        # if the packet is the continuation of another packet we don't create another central node 
-        if original_request_id and is_request: 
-            central_node_id = self.find_node(original_request_id,"packet_id")
-
-            # If original_request_id then current packet is the continuation of a precedent packet
-            # So the precedent must exist and if it couldn't be found it's an error
-            if central_node_id == None : 
-                print(f"Error : searching node with packet_id {original_request_id}. Supposed to exist")
-
-        # If not found or not sequel
-        if central_node_id == None : 
-            central_node_id = self.topology_graph.number_of_nodes()
-            self.topology_graph.add_node(central_node_id, label=central_node_label, ts=dissected_pkt["common"]["ts"], is_request=is_request, packet_id=packet_id)
-
-        # Add UE_ID as an attribute to the node to make sequences later
-        if "http2" in dissected_pkt and "ue_id" in dissected_pkt["http2"]: 
-            ue_id = dissected_pkt["http2"]["ue_id"]
-            self.topology_graph.nodes[central_node_id]["ue_id"] = ue_id
-
-        # Recursively parse the json
-        self.json_to_node(central_node_id, dissected_pkt.copy())
-
-        return central_node_id
-
-    def find_node(self, node_value: str, attribute: str) -> Optional[int]:
-        # Find the node if it already exist
-        for node_id, node_data in self.topology_graph.nodes(data=True):
-            if attribute in node_data and node_data[attribute] == node_value:
-                return node_id
+    if not stream_id or not stream_response:
         return None
-
-    def find_edge(self, parent_node: str, child_node_id: str, attribute: str, value: str) -> bool:
-        # Find the node if it already exist
-        edges = self.topology_graph.get_edge_data(parent_node, child_node_id)
-        if edges :
-            for edge_id,edge in edges.items():
-                if attribute in edge and edge[attribute] == value:
-                    return True
-        return False
-
-    def is_float(self, text: str) -> bool:
-        """
-        Vérifie si le texte est un nombre flottant
-        """
-        try:
-            float(text)
-            return True
-        except ValueError:
-            return False
-
-    def is_id(self, field_name: str) -> bool:
-        """
-        Vérifie si le champ est un identifiant
-        """
-        id_fields = ['id', 'packet_id', 'stream_id', 'ue_id', 'user_id']
-        return any(id_field in field_name.lower() for id_field in id_fields)
-
-    def predict_cluster(self, value: float) -> str:
-        """
-        Fonction simple de clustering basée sur des ranges
-        """
-        if value < 100:
-            return "small_values"
-        elif value < 1000:
-            return "medium_values"
-        elif value < 10000:
-            return "large_values"
-        else:
-            return "very_large_values"
-
-    def json_to_node(self, parent_node, json_content: Dict[str, Any], var_name: str = ""): 
-        """
-        Recursively parse a json file and convert it to Node objects each knowing their neighbours. 
-        """
-        if json_content : 
-
-            if isinstance(json_content, list):
-                for new_json_content in json_content : 
-                    if new_json_content : 
-                        self.json_to_node(parent_node, new_json_content, var_name)
-
-            elif isinstance(json_content, dict):
-                for key,new_json_content in json_content.items() :
-
-                    if key in ["http2","common"] : new_var_name = "" # arbitrary skip
-                    else : new_var_name = f"{var_name}.{key}" if var_name else key
-                    self.json_to_node(parent_node, new_json_content, var_name=new_var_name)
-            else:
-                node_src_label = self.topology_graph.nodes[parent_node]["label"]
-                edge_label     = var_name
-                node_dst_label = str(json_content)
-
-                # Si la valeur est un float, on la remplace par son cluster
-                if self.is_float(node_dst_label) and not self.is_id(var_name):
-                    node_dst_label = self.predict_cluster(float(node_dst_label))
-
-                # Si le nœud et l'arête existent déjà, on les ignore
-                child_node_id = self.find_node(node_dst_label, "label") # get id if does with same label exist, else None
-                found_edge    = self.find_edge(parent_node, child_node_id, "label", edge_label)
-
-                if not (child_node_id and found_edge) : 
-                    
-                    # Créer le nœud enfant s'il n'existe pas
-                    if not child_node_id: 
-                        child_node_id = self.topology_graph.number_of_nodes()
-                        self.topology_graph.add_node(child_node_id, label=node_dst_label)
-
-                    # Créer l'arête
-                    self.topology_graph.add_edge(parent_node, child_node_id, label=edge_label)
-
-    def get_sequence(self, seq_len: int, general: bool = False, specific_ue_id=None) -> List[Tuple[int, int]]:
-        """
-        Retrieve a sequence of nodes from the topology graph based on the specified criteria.
-        Parameters:
-            seq_len (int): The length of the sequence to return.
-            general (bool, optional): If True, only nodes without a UE_id will be included. Defaults to False.
-            specific_ue_id (optional): If provided, only nodes with the specified UE_id will be included. Defaults to None.
-        Returns:
-            list: A list of tuples containing node IDs and their timestamps, sorted by timestamp. The length of the list will be equal to seq_len.
-        Raises:
-            ValueError: If both general and specific_ue_id are provided.
-        Notes:
-        - If both general and specific_ue_id are not provided, all nodes will be included.
-        """
-        if general and specific_ue_id : 
-            raise ValueError(f"general={general} and specific_ue_id={specific_ue_id}. Only one can be true")
-
-        filtered_nodes = []
-        for node, data in self.topology_graph.nodes(data=True):
-
-            if "ts" in data : # central node
-
-                # Messages with the same UE_id 
-                if specific_ue_id :
-                    if "ue_id" in data and data["ue_id"] == specific_ue_id: 
-                        filtered_nodes.append((node, data["ts"]))
-
-                # Only messages without UE_id  
-                elif general :
-                    if "ue_id" not in data : 
-                        filtered_nodes.append((node, data["ts"]))
-
-                # Everything
-                else : 
-                    filtered_nodes.append((node, data["ts"]))
-
-        sorted_nodes = sorted(filtered_nodes, key=lambda x: x[1])
-        return sorted_nodes[len(sorted_nodes)-seq_len:] # Return list of tuple [(id,ts)]
-
-    def get_graph(self) -> nx.MultiDiGraph:
-        """Retourne le graphe topologique"""
-        return self.topology_graph
     
-    def get_graph_stats(self) -> Dict[str, Any]:
-        """Retourne les statistiques du graphe"""
-        return {
-            "num_nodes": self.topology_graph.number_of_nodes(),
-            "num_edges": self.topology_graph.number_of_edges(),
-            "central_nodes": len([n for n, d in self.topology_graph.nodes(data=True) if "ts" in d]),
-            "leaf_nodes": len([n for n, d in self.topology_graph.nodes(data=True) if "ts" not in d])
-        }
+    # The stream have been opened in the same direction (i.e the message is the continuation of a request)
+    if (ip_src, ip_dst) in opened_stream and stream_id in opened_stream[(ip_src, ip_dst)]:
+        central_node_id = opened_stream[(ip_src, ip_dst)][stream_id]
+    
+    # The stream have been opened in the other direction (i.e the message is a response)
+    elif (ip_dst, ip_src) in opened_stream and stream_id in opened_stream[(ip_dst, ip_src)]:
+        central_node_id = opened_stream[(ip_dst, ip_src)][stream_id]
+        
+        # If its the end of the stream, remove it from the history
+        if stream_response:
+            del opened_stream[(ip_dst, ip_src)][stream_id]
+    # The packet is the first message of the stream
+    else:
+        # Initialize the communication history between the two IPs
+        if (ip_src, ip_dst) not in opened_stream:
+            opened_stream[(ip_src, ip_dst)] = {}
+        
+        # Add the stream to the history
+        opened_stream[(ip_src, ip_dst)][stream_id] = topology_graph.number_of_nodes()
+    
+    return central_node_id
 
+def packet_to_nodes(dissected_pkt: dict, packet_id: int) -> int:
+    ip_src = dissected_pkt["common"]["ip_src"]
+    ip_dst = dissected_pkt["common"]["ip_dst"]
+    stream_id = stream_response = None
+    
+    # Try to get the stream in the http2 layer
+    if "http2" in dissected_pkt and "stream_id" in dissected_pkt["http2"]:
+        stream_id = dissected_pkt["http2"].pop("stream_id")
+        stream_response = dissected_pkt["http2"].pop("stream_response")
+    
+    central_node_id = find_stream(ip_src, ip_dst, stream_id, stream_response)
+    
+    # If the stream is not found, create a new central node
+    if central_node_id is None:
+        central_node_id = topology_graph.number_of_nodes()
+        topology_graph.add_node(central_node_id, label="", node_type=NodeType.CENTRAL.value, packet_id=packet_id)
+    
+    # Parameters common, http2, etc...
+    every_parameters = {}
+    for value in dissected_pkt.values():
+        every_parameters.update(value)
+    
+    # Add the parameter node and edges
+    for param_name, param_value in every_parameters.items():
+        # Convert the parameter value to string else it wouldnt display on the graph
+        param_value = str(param_value)
+        
+        # Check if the node already exists
+        parameted_node_id = find_node("label", param_value)
+        
+        # If the node does not exist, create it
+        if not parameted_node_id:
+            parameted_node_id = topology_graph.number_of_nodes()
+            topology_graph.add_node(parameted_node_id, label=param_value, node_type=NodeType.PARAMETER.value, packet_id=packet_id)
+        
+        # Connect the parameter node to the central node
+        topology_graph.add_edge(central_node_id, parameted_node_id, label=param_name)
+    
+    return central_node_id
 
-# Fonctions utilitaires pour compatibilité avec l'ancien code si nécessaire
-def create_topology_graph() -> NetworkTopologyGraph:
-    """Factory function pour créer un graphe topologique"""
-    return NetworkTopologyGraph()
+# Fonction pour afficher le graphe 
+
+def display_graph(graph: nx.DiGraph, output_file: str):
+    net = Network(
+        directed=True,
+        height="1000px"
+    )
+
+    # Couleurs personnalisées
+    COLOR_MAP = {
+        NodeType.CENTRAL.value: "#B388EB",    # Mauve
+        NodeType.PARAMETER.value: "#73C2FB"   # Bleu
+    }
+        
+    for node_id in graph.nodes:
+        graph.nodes[node_id]["color"] = COLOR_MAP.get(graph.nodes[node_id]["node_type"])
+        graph.nodes[node_id]["mass"] = graph.degree(node_id)
+
+    net.from_nx(graph)
+    net.save_graph(f'{output_file}.html')
