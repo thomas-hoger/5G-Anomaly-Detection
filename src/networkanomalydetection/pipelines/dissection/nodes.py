@@ -7,7 +7,7 @@ import pyshark
 from typing import List, Dict, Any
 from tqdm import tqdm
 
-from networkanomalydetection.utils.preprocessing import dissect_packet
+from networkanomalydetection.core.dissection.dissect_packet import dissect_packet
 
 
 def process_pcap_files(

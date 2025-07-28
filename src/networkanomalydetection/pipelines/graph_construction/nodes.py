@@ -7,7 +7,7 @@ Nœuds pour la construction du graphe topologique à partir du JSON complet
 """
 
 import json
-from networkanomalydetection.utils.graph_topology import packet_to_nodes, topology_graph, display_graph
+from networkanomalydetection.core.graph_construction.graph_topology import packet_to_nodes, topology_graph, display_graph
 
 def process_trace_file(input_data) -> str:
     """

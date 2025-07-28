@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Any
 from scapy.all import Packet
-from .http2 import dissect_http2
+from .http2_parser import dissect_http2
 
 
 def normalize_imsi(d: dict) -> dict:
