@@ -104,9 +104,33 @@ def display_graph(graph: nx.DiGraph, output_file: str):
         NodeType.PARAMETER.value: "#73C2FB"   # Bleu
     }
         
-    for node_id in graph.nodes:
-        graph.nodes[node_id]["color"] = COLOR_MAP.get(graph.nodes[node_id]["node_type"])
-        graph.nodes[node_id]["mass"] = graph.degree(node_id)
+    # IMPORTANT: Créer une copie pour la visualisation
+    graph_for_display = graph.copy()
+    
+    for node_id in graph_for_display.nodes:
+        graph_for_display.nodes[node_id]["color"] = COLOR_MAP.get(graph_for_display.nodes[node_id]["node_type"])
+        graph_for_display.nodes[node_id]["mass"] = graph_for_display.degree(node_id)
 
-    net.from_nx(graph)
+    net.from_nx(graph_for_display)  # Utiliser la copie
     net.save_graph(f'{output_file}.html')
+
+def reset_topology_graph():
+    """Réinitialise le graphe global pour un nouveau traitement"""
+    global topology_graph, opened_stream
+    topology_graph.clear()
+    opened_stream.clear()
+
+def get_clean_graph_copy() -> nx.MultiDiGraph:
+    """
+    Retourne une copie propre du graphe sans les attributs de visualisation
+    """
+    clean_graph = topology_graph.copy()
+    
+    # Supprimer les attributs de visualisation si ils existent
+    for node_id in clean_graph.nodes():
+        attrs_to_remove = ['color', 'mass']  # Attributs de visualisation
+        for attr in attrs_to_remove:
+            if attr in clean_graph.nodes[node_id]:
+                del clean_graph.nodes[node_id][attr]
+    
+    return clean_graph

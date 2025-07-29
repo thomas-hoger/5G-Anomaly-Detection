@@ -10,7 +10,7 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(
             func=process_trace_file,
             inputs="input_trace_file",
-            outputs="graph_html_output",
+            outputs=["graph_html_output", "complete_graph_pickle"],  
             name="process_trace_to_graph_node",
         ),
     ])
