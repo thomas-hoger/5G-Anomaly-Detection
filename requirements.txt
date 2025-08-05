@@ -1,4 +1,14 @@
 ipython>=8.10
 jupyterlab>=3.0
-kedro~=0.19.13
+kedro==1.0.0
 notebook
+kedro-viz
+pyshark 
+tqdm
+scapy
+jwt 
+pyvis
+scikit-learn
+torch
+torch_geometric 
+kedro-datasets
