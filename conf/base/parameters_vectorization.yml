@@ -1,0 +1,10 @@
+# This is a boilerplate parameters config generated for pipeline 'vectorization'
+# using Kedro 1.0.0rc1.
+#
+# Documentation for this file format can be found in "Parameters"
+# Link: https://docs.kedro.org/en/1.0.0rc1/configuration/parameters.html
+# conf/base/parameters_vectorization.yml
+vectorization:
+  node_dim: 64
+  edge_dim: 64
+  log_level: INFO
