@@ -1,5 +1,5 @@
 """
-This is a boilerplate pipeline 'vectorization'
+This is a boilerplate pipeline 'gnn_conversion'
 generated using Kedro 1.0.0
 """
 

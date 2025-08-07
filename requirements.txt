@@ -12,3 +12,5 @@ scikit-learn
 torch
 torch_geometric 
 kedro-datasets
+matplotlib
+seaborn

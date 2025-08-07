@@ -15,58 +15,28 @@ complete_graph_pickle:
   type: pickle.PickleDataset  
   filepath: data/03_primary/network_graph.pkl
 
-graph_html_output:
-  type: text.TextDataset  
-  filepath: data/reporting/graph_status.txt
-
 # Graphe vectorisé 
 vectorized_graph:
   type: pickle.PickleDataset
   filepath: data/05_model_input/vectorized_graph.pkl
 
-# Métadonnées de vectorisation 
-#Input gnn_pretraining
-vectorization_report:
-  type: json.JSONDataset
-  filepath: data/08_reporting/vectorization_report.json
+graph_html_output:
+  type: text.TextDataset  
+  filepath: data/reporting/graph_status.txt
 
-vectorization_summary:
-  type: json.JSONDataset
-  filepath: data/08_reporting/vectorization_summary.json
-
-# MODELS
-# Modèle GNN pré-entraîné
-trained_model:
+# === CONVERSION GNN ===
+gnn_pytorch_data:
   type: pickle.PickleDataset
-  filepath: data/06_models/pretrained_gnn_model.pkl
+  filepath: data/07_model_input/gnn_pytorch_data.pkl
 
-# Rapports de pipeline
-validation_report:
-  type: json.JSONDataset
-  filepath: data/08_reporting/gnn_validation_report.json
-
-preparation_report:
-  type: json.JSONDataset
-  filepath: data/08_reporting/gnn_preparation_report.json
-
-initialization_report:
-  type: json.JSONDataset
-  filepath: data/08_reporting/gnn_initialization_report.json
-
-training_report:
-  type: json.JSONDataset
-  filepath: data/08_reporting/gnn_training_report.json
-
-save_report:
-  type: json.JSONDataset
-  filepath: data/08_reporting/gnn_save_report.json
-
-# Données préparées (temporaires)
-prepared_data:
+conversion_metadata:
   type: pickle.PickleDataset
-  filepath: data/05_model_input/gnn_prepared_data.pkl
+  filepath: data/08_reporting/conversion_metadata.pkl
 
-# Modèle initialisé (temporaire)
-initialized_model:
-  type: pickle.PickleDataset
-  filepath: data/05_model_input/initialized_gnn_model.pkl
+conversion_validation_report:
+  type: json.JSONDataset
+  filepath: data/08_reporting/conversion_validation_report.json
+
+conversion_quality_report:
+  type: json.JSONDataset
+  filepath: data/08_reporting/conversion_quality_report.json
