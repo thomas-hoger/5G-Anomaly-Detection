@@ -14,7 +14,7 @@ from .hierarchical_handler import HierarchicalEdgeEncoder
 
 logger = logging.getLogger(__name__)
 
-class VectorizationReport:
+class VectorizationReport: 
     """Rapport de vectorisation"""
     
     def __init__(self):

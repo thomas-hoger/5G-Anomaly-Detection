@@ -1,11 +1,12 @@
 # Data catalog for dissection pipeline
 
 # Intermediate dataset for dissected data (will be used by graph_construction)
+#Fichier json juste pour un fichier pcap je l'ai fais juste pour tester 
 dissected_data:
   type: json.JSONDataset
   filepath: data/02_intermediate/dissected_data.json
 
-# Input : fichier JSON 
+# Input : fichier JSON : complet envoye par thomas apres la dissection
 input_trace_file:
   type: json.JSONDataset
   filepath: data/02_intermediate/filtered_1.json
@@ -18,16 +19,27 @@ complete_graph_pickle:
 # Graphe vectorisé 
 vectorized_graph:
   type: pickle.PickleDataset
-  filepath: data/05_model_input/vectorized_graph.pkl
+  filepath: data/04_feature/vectorized_graph.pkl
 
 graph_html_output:
   type: text.TextDataset  
-  filepath: data/reporting/graph_status.txt
+  filepath: data/08_reporting/graph_status.txt
 
-# === CONVERSION GNN ===
+# Graphe vectorisé : baseline TF-IDF + GMM
+# Graphe vectorisé avec méthode baseline
+baseline_vectorized_graph:
+  type: pickle.PickleDataset
+  filepath: data/04_feature/baseline_vectorized_graph.pkl
+
+# Rapport de vectorisation baseline
+baseline_vectorization_report:
+  type: text.TextDataset
+  filepath: data/08_reporting/baseline_vectorization_report.json
+
+# === CONVERSION GNN : Pipeline Vectorisation ===
 gnn_pytorch_data:
   type: pickle.PickleDataset
-  filepath: data/07_model_input/gnn_pytorch_data.pkl
+  filepath: data/05_model_input/gnn_pytorch_data.pkl
 
 conversion_metadata:
   type: pickle.PickleDataset
@@ -40,3 +52,20 @@ conversion_validation_report:
 conversion_quality_report:
   type: json.JSONDataset
   filepath: data/08_reporting/conversion_quality_report.json
+
+# === CONVERSION GNN - SYSTÈME BASELINE ===
+baseline_gnn_pytorch_data:
+  type: pickle.PickleDataset
+  filepath: data/05_model_input/baseline_gnn_pytorch_data.pkl
+
+baseline_conversion_metadata:
+  type: pickle.PickleDataset
+  filepath: data/08_reporting/baseline_conversion_metadata.pkl
+
+baseline_conversion_validation_report:
+  type: json.JSONDataset
+  filepath: data/08_reporting/baseline_conversion_validation_report.json
+
+baseline_conversion_quality_report:
+  type: json.JSONDataset
+  filepath: data/08_reporting/baseline_conversion_quality_report.json

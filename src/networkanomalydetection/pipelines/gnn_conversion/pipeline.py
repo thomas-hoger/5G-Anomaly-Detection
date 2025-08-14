@@ -25,5 +25,20 @@ def create_pipeline(**kwargs) -> Pipeline:
             inputs="conversion_validation_report", 
             outputs="conversion_quality_report",
             name="validate_quality_node"
+        ),
+        node(
+            func=convert_networkx_to_pytorch,
+            inputs="baseline_vectorized_graph",
+            outputs=["baseline_gnn_pytorch_data", "baseline_conversion_metadata", "baseline_conversion_validation_report"],
+            name="convert_baseline_to_pytorch_node"
+        ),
+        node(
+            func=validate_conversion_quality,
+            inputs="baseline_conversion_validation_report", 
+            outputs="baseline_conversion_quality_report",
+            name="validate_baseline_quality_node"
         )
+        
+
+        
     ])
