@@ -1,16 +1,23 @@
 """
-This is a boilerplate pipeline 'graph_construction'
-generated using Kedro 1.0.0rc1
+This is a boilerplate pipeline 'vectorization' generated using Kedro 1.0.0rc1
 """
 from kedro.pipeline import Pipeline, pipeline, node
-from .nodes import process_trace_file
+from .nodes import vectorize_graph_node, create_vectorization_summary_node
 
 def create_pipeline(**kwargs) -> Pipeline:
     return pipeline([
         node(
-            func=process_trace_file,
-            inputs="input_trace_file",
-            outputs=["graph_html_output", "complete_graph_pickle"],  
-            name="process_trace_to_graph_node",
+            func=vectorize_graph_node,
+            inputs=["complete_graph_pickle"],
+            outputs=["vectorized_graph", "vectorization_report"],
+            name="vectorize_graph_node",
+            tags=["vectorization", "machine_learning", "core"]
+        ),
+        node(
+            func=create_vectorization_summary_node,
+            inputs="vectorization_report",
+            outputs="vectorization_summary",
+            name="create_vectorization_summary_node",
+            tags=["vectorization", "reporting", "monitoring"]
         ),
     ])
