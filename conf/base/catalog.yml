@@ -78,3 +78,24 @@ baseline_conversion_validation_report:
 baseline_conversion_quality_report:
   type: json.JSONDataset
   filepath: data/08_reporting/baseline_conversion_quality_report.json
+
+# Configuration catalog pour gnn_sampling
+# Ajouter dans conf/base/catalog.yml
+
+# Données intermédiaires
+subgraphs_main_raw:
+  type: pickle.PickleDataset
+  filepath: data/05_model_input/gnn_sampling/subgraphs_main_raw.pkl
+
+subgraphs_baseline_raw:
+  type: pickle.PickleDataset
+  filepath: data/05_model_input/gnn_sampling/subgraphs_baseline_raw.pkl
+
+# Données finales pour entraînement
+training_data_main:
+  type: pickle.PickleDataset
+  filepath: data/05_model_input/gnn_training/training_data_main.pkl
+
+training_data_baseline:
+  type: pickle.PickleDataset
+  filepath: data/05_model_input/gnn_training/training_data_baseline.pkl
