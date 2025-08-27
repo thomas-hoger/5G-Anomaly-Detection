@@ -8,6 +8,7 @@ from networkanomalydetection.pipelines.vectorization import create_pipeline as c
 from networkanomalydetection.pipelines.gnn_conversion import create_pipeline as create_conversion_pipeline
 from networkanomalydetection.pipelines.baseline_vectorization import create_pipeline as create_baseline_vectorization_pipeline
 from networkanomalydetection.pipelines.gnn_sampling import create_pipeline as create_sampling
+from networkanomalydetection.pipelines.gnn_training import create_pipeline as create_gnn_training
 
 def register_pipelines() -> Dict[str, Pipeline]:
     dissection_pipeline = create_dissection_pipeline()
@@ -16,6 +17,7 @@ def register_pipelines() -> Dict[str, Pipeline]:
     conversion_pipeline= create_conversion_pipeline()
     baseline_vectorization = create_baseline_vectorization_pipeline()
     graph_sampling = create_sampling()
+    gnn_training = create_gnn_training()
     
     return {
         "dissection": dissection_pipeline,
@@ -24,5 +26,6 @@ def register_pipelines() -> Dict[str, Pipeline]:
         "conversion":conversion_pipeline,
         "baseline_vectorization":baseline_vectorization,
         "graph_sampling":graph_sampling,
+        "gnn_training":gnn_training ,
         "__default__": dissection_pipeline
     }

@@ -1,28 +1,30 @@
 """
 Subgraph Sampler pour entraînement GNN
 Génération séquentielle par packet_id avec limitation de taille
+CORRECTION: Ego-graph centré uniquement sur nœuds centraux (node_type=1)
 """
 import networkx as nx
 import numpy as np
 import random
 import logging
 from typing import List, Dict, Any, Iterator, Tuple
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
 class SubgraphSampler:
     """
     Générateur de subgraphs pour entraînement GNN
-    Stratégie: packet_id séquentiel + ego-graph profondeur 2 (taille naturelle)
+    Stratégie: packet_id séquentiel + ego-graph profondeur 2 
+    CENTRÉ UNIQUEMENT SUR NŒUDS CENTRAUX
     """
     
     def __init__(self, networkx_graph: nx.MultiDiGraph,
-                 radius: int = 2,
-                 batch_size: int = 16):
+                 radius: int = 2):
         
         self.graph = networkx_graph
         self.radius = radius
-        self.batch_size = batch_size
+        
         
         # Extraire packet_ids triés
         self.packet_ids = self._extract_packet_ids()
@@ -48,10 +50,11 @@ class SubgraphSampler:
         return valid_nodes
     
     def _get_target_nodes(self, packet_id: int) -> List[str]:
-        """Nœuds avec packet_id exact"""
+        """Nœuds CENTRAUX avec packet_id exact (node_type=1 uniquement)"""
         target_nodes = []
         for node_id, attrs in self.graph.nodes(data=True):
-            if attrs.get('packet_id') == packet_id:
+            if (attrs.get('packet_id') == packet_id and 
+                attrs.get('node_type') == 1):  # SEULEMENT nœuds centraux
                 target_nodes.append(node_id)
         return target_nodes
     
@@ -75,7 +78,7 @@ class SubgraphSampler:
             return None
     
     def _is_valid_subgraph(self, subgraph: nx.Graph) -> bool:
-        """Validation subgraph"""
+        """Validation subgraph logique"""
         if subgraph is None:
             return False
         
@@ -86,11 +89,7 @@ class SubgraphSampler:
         if num_nodes < 2:
             return False
         
-        # Accepter subgraphs sans arêtes si plusieurs nœuds (contexte 5G)
-        if num_nodes >= 3:
-            return True
-        
-        # Pour 2 nœuds, au moins 1 arête
+        # Pour 2+ nœuds, au moins 1 arête (structure connectée)
         return num_edges >= 1
     
     def generate_batch(self, packet_id: int) -> List[nx.Graph]:
@@ -101,11 +100,7 @@ class SubgraphSampler:
         if not target_nodes:
             return []
         
-        # Limiter nombre de targets
-        if len(target_nodes) > self.batch_size:
-            target_nodes = random.sample(target_nodes, self.batch_size)
-        
-        # Générer subgraphs
+        # Prendre TOUS les nœuds centraux (pas de limitation)
         valid_subgraphs = []
         for target_node in target_nodes:
             subgraph = self._generate_ego_graph(target_node, packet_id)
@@ -114,11 +109,30 @@ class SubgraphSampler:
         
         return valid_subgraphs
     
-    def batch_iterator(self) -> Iterator[Tuple[int, List[nx.Graph]]]:
-        """Itérateur principal"""
-        for packet_id in self.packet_ids:
+    def batch_iterator(self, show_progress: bool = True) -> Iterator[Tuple[int, List[nx.Graph]]]:
+        """Itérateur principal avec barre de progression"""
+        packet_iter = tqdm(self.packet_ids, 
+                          desc="Processing packets",
+                          unit="packet",
+                          disable=not show_progress) if show_progress else self.packet_ids
+        
+        total_subgraphs = 0
+        valid_packets = 0
+        
+        for packet_id in packet_iter:
             subgraphs = self.generate_batch(packet_id)
             if subgraphs:
+                total_subgraphs += len(subgraphs)
+                valid_packets += 1
+                
+                # Mise à jour description tqdm
+                if show_progress:
+                    packet_iter.set_postfix({
+                        'valid_packets': valid_packets,
+                        'total_subgraphs': total_subgraphs,
+                        'avg_per_packet': f"{total_subgraphs/valid_packets:.1f}"
+                    })
+                
                 yield packet_id, subgraphs
 
 class BatchProcessor:
@@ -159,20 +173,36 @@ class BatchProcessor:
         
         return pytorch_subgraphs
     
-    def process_iterator(self, batch_iterator: Iterator[Tuple[int, List[nx.Graph]]]) -> Iterator[Tuple[int, List[Dict]]]:
-        """Processeur d'itérateur"""
+    def process_iterator(self, batch_iterator: Iterator[Tuple[int, List[nx.Graph]]], 
+                        show_progress: bool = True) -> Iterator[Tuple[int, List[Dict]]]:
+        """Processeur d'itérateur avec progression"""
+        
+        processed = 0
+        failed = 0
+        
         for packet_id, nx_subgraphs in batch_iterator:
             pytorch_subgraphs = self.process_batch(nx_subgraphs)
+            
             if pytorch_subgraphs:
+                processed += len(pytorch_subgraphs)
                 yield packet_id, pytorch_subgraphs
+            else:
+                failed += 1
+            
+            # Log périodique
+            if show_progress and (processed + failed) % 1000 == 0:
+                logger.info(f"Processed: {processed} subgraphs, Failed: {failed}")
+
 
 def create_training_pipeline(vectorized_graph: nx.MultiDiGraph,
                            radius: int = 2,
-                           batch_size: int = 16) -> Iterator[Tuple[int, List[Dict]]]:
-    """Pipeline complet génération + conversion"""
+                           show_progress: bool = True) -> Iterator[Tuple[int, List[Dict]]]:
+    """Pipeline complet génération + conversion avec progression"""
     
-    sampler = SubgraphSampler(vectorized_graph, radius, batch_size)
+    sampler = SubgraphSampler(vectorized_graph, radius)
     processor = BatchProcessor()
     
-    batch_iterator = sampler.batch_iterator()
-    return processor.process_iterator(batch_iterator)
+    logger.info(f"Starting pipeline: {len(sampler.packet_ids)} packets to process")
+    
+    batch_iterator = sampler.batch_iterator(show_progress=show_progress)
+    return processor.process_iterator(batch_iterator, show_progress=show_progress)

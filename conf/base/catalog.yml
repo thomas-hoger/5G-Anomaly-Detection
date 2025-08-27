@@ -99,3 +99,51 @@ training_data_main:
 training_data_baseline:
   type: pickle.PickleDataset
   filepath: data/05_model_input/gnn_training/training_data_baseline.pkl
+
+# MAIN
+train_val_split_main:
+  type: pickle.PickleDataset
+  filepath: data/05_model_input/gnn_training/train_val_split_main.pkl
+
+gnn_training_results_main:
+  type: pickle.PickleDataset
+  filepath: data/06_models/gnn_training_results_main.pkl
+
+# BASELINE  
+train_val_split_baseline:
+  type: pickle.PickleDataset
+  filepath: data/05_model_input/gnn_training/train_val_split_baseline.pkl
+
+gnn_training_results_baseline:
+  type: pickle.PickleDataset
+  filepath: data/06_models/gnn_training_results_baseline.pkl
+
+# COMPARAISON
+model_comparison:
+  type: pickle.PickleDataset
+  filepath: data/08_reporting/gnn/model_comparison.pkl
+
+# Graphiques GNN entraînement
+training_curves_fig:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/gnn/training_curves.png
+  save_args:
+    dpi: 300
+    bbox_inches: tight
+    facecolor: white
+
+error_histograms_fig:
+  type: matplotlib.MatplotlibWriter  
+  filepath: data/08_reporting/gnn/error_histograms.png
+  save_args:
+    dpi: 300
+    bbox_inches: tight
+    facecolor: white
+
+training_summary_fig:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/gnn/training_summary.png
+  save_args:
+    dpi: 300
+    bbox_inches: tight
+    facecolor: white
