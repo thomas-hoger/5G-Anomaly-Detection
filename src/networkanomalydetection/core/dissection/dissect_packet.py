@@ -1,6 +1,7 @@
 import re
-from typing import List, Dict, Any
+
 from scapy.all import Packet
+
 from .http2_parser import dissect_http2
 
 
@@ -15,11 +16,11 @@ def normalize_imsi(d: dict) -> dict:
             matched = re.search(r'suci-\d+-\d+-\d+-\d+-\d+-\d+-\d+', value)
             if not matched:
                 matched = re.search(r'imsi-\d{15}', value)
-            
+
             if matched:
                 parts = matched.group().split("-")
                 id_type = parts.pop(0)
-                
+
                 if id_type == "suci":
                     supi_type = int(parts[0])
                     if supi_type == 0:   # IMSI
@@ -28,10 +29,10 @@ def normalize_imsi(d: dict) -> dict:
                         unified_imsi = ""
                 else:
                     unified_imsi = parts[0]
-                
+
                 del new_d[key]
                 new_d["imsi"] = unified_imsi
-    
+
     return new_d
 
 
@@ -78,23 +79,23 @@ def remove_empty_values(d: dict) -> dict:
     return new_d
 
 
-def dissect_packet(packet: Packet, feature_ban_list: List[str]) -> List[Dict[str, Any]]:
+def dissect_packet(packet: Packet, feature_ban_list: list[str]) -> list[dict]:
     """
     Dissect application level features in a given packet
-    
+
     Args:
         packet: Packet to dissect
         feature_ban_list: List of banned features
-        
+
     Returns:
         List of dissected layers
     """
     dissected_layers = []
 
-    # Check for the IP layer 
-    if not hasattr(packet, 'ip'): 
+    # Check for the IP layer
+    if not hasattr(packet, 'ip'):
         return dissected_layers
-    
+
     # Information common to all packets
     packet_informations = {
         "common": {    # Fields that will be present in the graph
@@ -103,19 +104,20 @@ def dissect_packet(packet: Packet, feature_ban_list: List[str]) -> List[Dict[str
             "ts": float(packet.sniff_timestamp)
         }
     }
-    
-    # HTTP2 packets 
-    if 'HTTP2' in packet: 
+
+    # HTTP2 packets
+    if 'HTTP2' in packet:
         dissected_pkt = dissect_http2(packet)
-        for layer in dissected_pkt: 
-            if layer: 
-                layer = flatten_dict(layer)
-                layer = normalize_imsi(layer)
-                layer = remove_banned_values(layer, feature_ban_list)
-                layer = remove_empty_values(layer)
-                
+        for layer in dissected_pkt:
+            if layer:
+                new_layer = layer.copy()
+                new_layer = flatten_dict(new_layer)
+                new_layer = normalize_imsi(new_layer)
+                new_layer = remove_banned_values(new_layer, feature_ban_list)
+                new_layer = remove_empty_values(new_layer)
+
                 layer_with_infos = packet_informations.copy()
-                layer_with_infos["http2"] = layer
+                layer_with_infos["http2"] = new_layer
                 dissected_layers.append(layer_with_infos)
 
     return dissected_layers

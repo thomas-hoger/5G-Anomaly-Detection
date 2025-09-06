@@ -1,6 +1,7 @@
 import json
+from urllib.parse import parse_qs, urlparse
+
 import jwt
-from urllib.parse import urlparse, parse_qs
 from scapy.all import Packet
 
 http_type = {
@@ -35,22 +36,22 @@ def parse_urlencoded_params(url: str) -> dict:
     result = {}
     parsed_url = urlparse(url)
     result['path'] = parsed_url.path
-    
+
     if parsed_url.query:
         parsed_query = parse_qs(parsed_url.query)
-        
+
         for key, values in parsed_query.items():
             new_values = []
             for value in values:
                 try:
-                    value = json.loads(value)
-                    new_values.append(value)
+                    new_value = json.loads(value)
+                    new_values.append(new_value)
                 except json.JSONDecodeError:
                     new_values.append(value)
-            
+
             if len(new_values) == 1:
                 result[key] = new_values[0]
-    
+
     return result
 
 def extract_json(data: str) -> dict:
@@ -58,7 +59,7 @@ def extract_json(data: str) -> dict:
         loaded = json.loads(data)
         if isinstance(loaded, list):
             loaded = {index: value for index, value in enumerate(loaded)}
-        
+
         if loaded is not None:
             return loaded
         else:
@@ -105,8 +106,8 @@ def field_unpacking(field: str, pkt_json_content: dict) -> dict:
 
     return pkt_json_content
 
-def dissect_http2(packet: Packet) -> list:
-    """Dissect HTTP2 Frame packet 
+def dissect_http2(packet: Packet) -> list:  # noqa: PLR0912
+    """Dissect HTTP2 Frame packet
 
     Args:
         pkt (Packet): Pyshark packet that will be dissected
@@ -146,7 +147,7 @@ def dissect_http2(packet: Packet) -> list:
                                 jwt_raw = jwt_raw[0]
                             content["jwt"] = decode_jwt(jwt_raw)
 
-                    # Flags 
+                    # Flags
                     if 'http2.flags.end_stream' in fields:
                         content["stream_response"] = str(fields['http2.flags.end_stream']) == "True"
                         content["stream_id"] = int(fields['http2.streamid'])
