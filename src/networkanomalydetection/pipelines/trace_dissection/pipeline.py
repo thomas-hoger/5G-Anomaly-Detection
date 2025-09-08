@@ -1,26 +1,27 @@
 """
 Kedro pipeline for packet dissection
 """
-from kedro.pipeline import Pipeline, pipeline, node
-from .nodes import process_pcap_files
+from kedro.pipeline import Pipeline, node, pipeline
+
+from .nodes import trace_dissection
 
 
 def create_pipeline(**kwargs) -> Pipeline:
     """
     Create the dissection pipeline.
-    
+
     Returns:
         Kedro Pipeline for packet dissection
     """
     return pipeline([
         node(
-            func=process_pcap_files,
+            func=trace_dissection,
             inputs={
-                "input_trace_dir": "params:input_trace_dir",
+                "pkts": "trace_to_dissect",
                 "banned_features": "params:banned_features",
-                "buffer_size": "params:buffer_size"
+                "label_dataframe": "trace_labels"
             },
-            outputs="dissected_data",
+            outputs="trace_dissected",
             name="dissect_pcap_files"
         )
     ])

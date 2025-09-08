@@ -1,49 +1,78 @@
-# Data catalog for dissection pipeline
+
+# ==== 1) trace_cleaning_and_labelling
+
+# -> Input
+initial_raw_file:
+  type: networkanomalydetection.datasets.scapy_pcap_dataset.ScapyPcapDataSet
+  filepath: data/initial_raw/benign.pcap
+
+# <- Output
+trace_clean:
+  type: networkanomalydetection.datasets.scapy_pcap_dataset.ScapyPcapDataSet
+  filepath: data/trace_clean/benign.pcap
+
+trace_labels:
+  type: pandas.CSVDataset 
+  filepath: data/trace_labels/benign.csv
+
+# ==== 2) trace_dissection
+
+# -> Input
+trace_to_dissect:
+  type: networkanomalydetection.datasets.pyshark_pcap_dataset.PySharkPcapDataSet
+  filepath: data/trace_clean/benign.pcap
+
+# <- Output
+trace_dissected:
+  type: json.JSONDataset
+  filepath: data/trace_dissection/benign.json
+
 
 # Intermediate dataset for dissected data (will be used by graph_construction)
 #Fichier json juste pour un fichier pcap je l'ai fais juste pour tester 
+
+filtered_labelized_data:
+  type: pandas.CSVDataset 
+  filepath: data/filtered_labelized/filtered_labelized_data.csv
+
 dissected_data:
   type: json.JSONDataset
-  filepath: data/02_intermediate/dissected_data.json
+  filepath: data/dissected/dissected_data.json
 
-# Input : fichier JSON : complet envoye par thomas apres la dissection
-input_trace_file:
-  type: json.JSONDataset
-  filepath: data/02_intermediate/filtered_1.json
 
 # =>Output : graph_construction => Input Graph vectorisé 
 complete_graph_pickle:
   type: pickle.PickleDataset  
-  filepath: data/03_primary/network_graph.pkl
+  filepath: data/graph/network_graph.pkl
 
 graph_html_output:
   type: text.TextDataset  
-  filepath: data/08_reporting/graph_status.txt
+  filepath: data/reporting/graph_status.txt
 
 # Graphe vectorisé 
 vectorized_graph:
   type: pickle.PickleDataset
-  filepath: data/04_feature/vectorized_graph.pkl
+  filepath: data/vectorized_graph/vectorized_graph.pkl
 
 vectorization_report:
   type: json.JSONDataset
-  filepath: data/08_reporting/vectorization_report.json
+  filepath: data/reporting/vectorization_report.json
 
 vectorization_summary:
   type: json.JSONDataset
-  filepath: data/08_reporting/vectorization_summary.json
+  filepath: data/reporting/vectorization_summary.json
 
 
 # Graphe vectorisé : baseline TF-IDF + GMM
 # Graphe vectorisé avec méthode baseline
 baseline_vectorized_graph:
   type: pickle.PickleDataset
-  filepath: data/04_feature/baseline_vectorized_graph.pkl
+  filepath: data/vectorized_graph/baseline_vectorized_graph.pkl
 
 # Rapport de vectorisation baseline
 baseline_vectorization_report:
   type: text.TextDataset
-  filepath: data/08_reporting/baseline_vectorization_report.json
+  filepath: data/reporting/baseline_vectorization_report.json
 
 # === CONVERSION GNN : Pipeline Vectorisation ===
 gnn_pytorch_data:
@@ -52,15 +81,15 @@ gnn_pytorch_data:
 
 conversion_metadata:
   type: pickle.PickleDataset
-  filepath: data/08_reporting/conversion_metadata.pkl
+  filepath: data/reporting/conversion_metadata.pkl
 
 conversion_validation_report:
   type: json.JSONDataset
-  filepath: data/08_reporting/conversion_validation_report.json
+  filepath: data/reporting/conversion_validation_report.json
 
 conversion_quality_report:
   type: json.JSONDataset
-  filepath: data/08_reporting/conversion_quality_report.json
+  filepath: data/reporting/conversion_quality_report.json
 
 # === CONVERSION GNN - SYSTÈME BASELINE ===
 baseline_gnn_pytorch_data:
@@ -69,15 +98,15 @@ baseline_gnn_pytorch_data:
 
 baseline_conversion_metadata:
   type: pickle.PickleDataset
-  filepath: data/08_reporting/baseline_conversion_metadata.pkl
+  filepath: data/reporting/baseline_conversion_metadata.pkl
 
 baseline_conversion_validation_report:
   type: json.JSONDataset
-  filepath: data/08_reporting/baseline_conversion_validation_report.json
+  filepath: data/reporting/baseline_conversion_validation_report.json
 
 baseline_conversion_quality_report:
   type: json.JSONDataset
-  filepath: data/08_reporting/baseline_conversion_quality_report.json
+  filepath: data/reporting/baseline_conversion_quality_report.json
 
 # Configuration catalog pour gnn_sampling
 # Ajouter dans conf/base/catalog.yml
@@ -107,7 +136,7 @@ train_val_split_main:
 
 gnn_training_results_main:
   type: pickle.PickleDataset
-  filepath: data/06_models/gnn_training_results_main.pkl
+  filepath: data/models/gnn_training_results_main.pkl
 
 # BASELINE  
 train_val_split_baseline:
@@ -116,17 +145,17 @@ train_val_split_baseline:
 
 gnn_training_results_baseline:
   type: pickle.PickleDataset
-  filepath: data/06_models/gnn_training_results_baseline.pkl
+  filepath: data/models/gnn_training_results_baseline.pkl
 
 # COMPARAISON
 model_comparison:
   type: pickle.PickleDataset
-  filepath: data/08_reporting/gnn/model_comparison.pkl
+  filepath: data/reporting/gnn/model_comparison.pkl
 
 # Graphiques GNN entraînement
 training_curves_fig:
   type: matplotlib.MatplotlibWriter
-  filepath: data/08_reporting/gnn/training_curves.png
+  filepath: data/reporting/gnn/training_curves.png
   save_args:
     dpi: 300
     bbox_inches: tight
@@ -134,7 +163,7 @@ training_curves_fig:
 
 error_histograms_fig:
   type: matplotlib.MatplotlibWriter  
-  filepath: data/08_reporting/gnn/error_histograms.png
+  filepath: data/reporting/gnn/error_histograms.png
   save_args:
     dpi: 300
     bbox_inches: tight
@@ -142,7 +171,7 @@ error_histograms_fig:
 
 training_summary_fig:
   type: matplotlib.MatplotlibWriter
-  filepath: data/08_reporting/gnn/training_summary.png
+  filepath: data/reporting/gnn/training_summary.png
   save_args:
     dpi: 300
     bbox_inches: tight

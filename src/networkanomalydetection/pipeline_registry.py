@@ -1,31 +1,27 @@
 """Project pipelines."""
-from __future__ import annotations
 
 from kedro.pipeline import Pipeline
-from networkanomalydetection.pipelines.dissection import create_pipeline as create_dissection_pipeline
-from networkanomalydetection.pipelines.graph_construction import create_pipeline as create_graph_construction_pipeline
-from networkanomalydetection.pipelines.vectorization import create_pipeline as create_vectorization_pipeline 
-from networkanomalydetection.pipelines.gnn_conversion import create_pipeline as create_conversion_pipeline
-from networkanomalydetection.pipelines.baseline_vectorization import create_pipeline as create_baseline_vectorization_pipeline
-from networkanomalydetection.pipelines.gnn_sampling import create_pipeline as create_sampling
-from networkanomalydetection.pipelines.gnn_training import create_pipeline as create_gnn_training
 
-def register_pipelines() -> Dict[str, Pipeline]:
-    dissection_pipeline = create_dissection_pipeline()
-    graph_construction_pipeline = create_graph_construction_pipeline()
-    vectorization_pipeline= create_vectorization_pipeline()
-    conversion_pipeline= create_conversion_pipeline()
-    baseline_vectorization = create_baseline_vectorization_pipeline()
-    graph_sampling = create_sampling()
-    gnn_training = create_gnn_training()
-    
+from networkanomalydetection.pipelines import (
+    # feature_vectorization,
+    # graph_construction,
+    # graph_sampling,
+    # graph_vectorization,
+    # model_passing,
+    trace_cleaning_and_labelling,
+    trace_dissection,
+)
+
+
+def register_pipelines() -> dict[str, Pipeline]:
+
     return {
-        "dissection": dissection_pipeline,
-        "graph_construction": graph_construction_pipeline, 
-        "vectorization": vectorization_pipeline,
-        "conversion":conversion_pipeline,
-        "baseline_vectorization":baseline_vectorization,
-        "graph_sampling":graph_sampling,
-        "gnn_training":gnn_training ,
-        "__default__": dissection_pipeline
+        "trace_cleaning_and_labelling" : trace_cleaning_and_labelling.create_pipeline(),
+        "trace_dissection": trace_dissection.create_pipeline(),
+        # "graph_construction": graph_construction.create_pipeline(),
+        # "feature_vectorization": feature_vectorization.create_pipeline(),
+        # "graph_sampling": graph_sampling.create_pipeline(),
+        # "graph_vectorization":graph_vectorization.create_pipeline(),
+        # "model_passing":model_passing.create_pipeline()
     }
+

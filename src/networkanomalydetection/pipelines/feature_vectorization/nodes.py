@@ -11,7 +11,7 @@ from typing import Dict, Any, Tuple,List
 import datetime
 
 
-from networkanomalydetection.core.vectorization.graph_vectorizer import IntelligentGraphVectorizer
+from networkanomalydetection.core.feature_vectorization.graph_vectorizer import IntelligentGraphVectorizer
 
 logger = logging.getLogger(__name__)
 

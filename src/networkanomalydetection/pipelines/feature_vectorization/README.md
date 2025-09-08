@@ -14,7 +14,7 @@ kedro run --pipeline=vectorization
 ## Données d'Entrée et de Sortie
 
 ### Entrée
-- **Fichier trace** : `data/03_primary/network_graph.pkl`
+- **Fichier trace** : `data/graph/network_graph.pkl`
 
 ### Sortie
 - **Graphe vectorisé** : `data/05_model_input/vectorized_graph.pkl`

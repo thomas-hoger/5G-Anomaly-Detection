@@ -36,7 +36,7 @@ def process_trace_file(input_data) -> str:
             break
     
     # Générer la visualisation HTML
-    display_graph(topology_graph, "data/08_reporting/graph_display2")
+    display_graph(topology_graph, "data/reporting/graph_display2")
     html_message = "Graphe genere avec succes dans graph_display2.html"
 
      # ÉTAPE 2: Continuer le traitement pour le graphe complet

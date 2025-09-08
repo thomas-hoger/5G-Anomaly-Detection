@@ -14,7 +14,7 @@ from datetime import datetime
 import ipaddress
 
 # Import du DimensionUnifier pour cohérence
-from networkanomalydetection.core.vectorization.dimension_unifier import DimensionUnifier
+from networkanomalydetection.core.feature_vectorization.dimension_unifier import DimensionUnifier
 
 logger = logging.getLogger(__name__)
 

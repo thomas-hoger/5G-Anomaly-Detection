@@ -17,7 +17,7 @@ def convert_networkx_to_pytorch(vectorized_graph) -> Tuple[Dict[str, Any], Dict[
     Returns:
         Tuple (pytorch_data, conversion_metadata, validation_report)
     """
-    from networkanomalydetection.core.conversion import NetworkXToTorchConverter
+    from networkanomalydetection.core.graph_vectorization import NetworkXToTorchConverter
     
     logger.info(f"Conversion du graphe NetworkX: {vectorized_graph.number_of_nodes()} nœuds")
     

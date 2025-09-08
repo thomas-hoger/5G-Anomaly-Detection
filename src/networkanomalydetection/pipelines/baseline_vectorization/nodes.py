@@ -4,7 +4,7 @@ import logging
 import pickle
 from typing import Dict, Any, Tuple
 
-from networkanomalydetection.core.baseline_vectorization.baseline_vectorizer import BaselineVectorizer
+from networkanomalydetection.core.feature_vectorization.baseline_vectorizer import BaselineVectorizer
 
 logger = logging.getLogger(__name__)
 

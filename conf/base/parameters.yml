@@ -1,10 +1,9 @@
 # Parameters for dissection pipeline
 
 # Input directory
-input_trace_dir: "data/01_raw/pcap_files"
+initial_raw_file: "data/initial_raw/benign.pcap"
 
-# Processing parameters  
-buffer_size: 1000
+evil_ip : 10.100.200.66
 
 # Banned features list
 banned_features:

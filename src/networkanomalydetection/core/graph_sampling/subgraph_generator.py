@@ -139,7 +139,7 @@ class BatchProcessor:
     """Conversion NetworkX vers PyTorch"""
     
     def __init__(self):
-        from networkanomalydetection.core.conversion import NetworkXToTorchConverter
+        from networkanomalydetection.core.graph_vectorization import NetworkXToTorchConverter
         self.converter = NetworkXToTorchConverter(validate=False, device='cpu')
     
     def process_batch(self, subgraphs: List[nx.Graph]) -> List[Dict[str, Any]]:
