@@ -35,7 +35,7 @@ def trace_dissection(
             pkt_label_entry = label_dataframe.loc[i]
 
             if dissected_layer:
-                dissected_layer["common"]["is_attack"] = pkt_label_entry["is_attack"]
+                dissected_layer["common"]["is_attack"] = str(pkt_label_entry["is_attack"])
                 dissected_layer["common"]["type"] = pkt_label_entry["type"]
                 result.append(dissected_layer)
 

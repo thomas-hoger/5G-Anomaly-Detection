@@ -27,27 +27,24 @@ trace_dissected:
   type: json.JSONDataset
   filepath: data/trace_dissection/benign.json
 
+# ==== 3) graph_construction
 
-# Intermediate dataset for dissected data (will be used by graph_construction)
-#Fichier json juste pour un fichier pcap je l'ai fais juste pour tester 
-
-filtered_labelized_data:
-  type: pandas.CSVDataset 
-  filepath: data/filtered_labelized/filtered_labelized_data.csv
-
-dissected_data:
-  type: json.JSONDataset
-  filepath: data/dissected/dissected_data.json
-
-
-# =>Output : graph_construction => Input Graph vectorisé 
-complete_graph_pickle:
+# <- Output
+initial_graph:
   type: pickle.PickleDataset  
-  filepath: data/graph/network_graph.pkl
+  filepath: data/graph_construction/benign.pkl
 
-graph_html_output:
+# ==== 4) graph_visualization
+
+initial_graph_display:
   type: text.TextDataset  
-  filepath: data/reporting/graph_status.txt
+  filepath: data/reporting/graph_status.html
+
+
+
+
+
+
 
 # Graphe vectorisé 
 vectorized_graph:

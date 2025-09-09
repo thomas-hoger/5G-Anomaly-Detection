@@ -1,16 +1,14 @@
-"""
-This is a boilerplate pipeline 'graph_construction'
-generated using Kedro 1.0.0rc1
-"""
-from kedro.pipeline import Pipeline, pipeline, node
-from .nodes import process_trace_file
+from kedro.pipeline import Pipeline, node, pipeline
+
+from .nodes import build_graph
+
 
 def create_pipeline(**kwargs) -> Pipeline:
     return pipeline([
         node(
-            func=process_trace_file,
-            inputs="initial_raw_file_file",
-            outputs=["graph_html_output", "complete_graph_pickle"],  
-            name="process_trace_to_graph_node",
+            func=build_graph,
+            inputs="trace_dissected",
+            outputs="initial_graph",
+            name="trace_to_graph",
         ),
     ])
