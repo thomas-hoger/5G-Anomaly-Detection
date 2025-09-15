@@ -1,0 +1,601 @@
+{
+  "method": [
+    "GET",
+    "DELETE",
+    "PATCH",
+    "PUT",
+    "POST"
+  ],
+  "token_type": [
+    "Bearer"
+  ],
+  "scope": [
+    "nnssf-nsselection",
+    "nchf-convergedcharging",
+    "nudm-uecm",
+    "nausf-auth",
+    "npcf-smpolicycontrol",
+    "namf-comm",
+    "nudm-sdm",
+    "nsmf-pdusession",
+    "nnrf-nfm",
+    "npcf-am-policy-control",
+    "nnrf-disc",
+    "nudm-ueau",
+    "nudr-dr"
+  ],
+  "jwt.scope": [
+    "nnssf-nsselection",
+    "nchf-convergedcharging",
+    "nudm-uecm",
+    "nausf-auth",
+    "npcf-smpolicycontrol",
+    "namf-comm",
+    "nudm-sdm",
+    "nsmf-pdusession",
+    "nnrf-nfm",
+    "npcf-am-policy-control",
+    "nnrf-disc",
+    "nudm-ueau",
+    "nudr-dr"
+  ],
+  "nfType": [
+    "PCF",
+    "AMF",
+    "AUSF",
+    "UDR",
+    "UDM",
+    "NEF",
+    "CHF",
+    "SMF",
+    "NSSF"
+  ],
+  "nfStatus": [
+    "REGISTERED"
+  ],
+  "nfServices.serviceName": [
+    "nudm-uecm",
+    "npcf-ue-policy-control",
+    "npcf-eventexposure",
+    "namf-evts",
+    "namf-comm",
+    "nudm-ueau",
+    "nchf-convergedcharging",
+    "nsmf-oam",
+    "nausf-auth",
+    "npcf-smpolicycontrol",
+    "namf-oam",
+    "nudm-sdm",
+    "namf-mt",
+    "npcf-bdtpolicycontrol",
+    "nudr-dr",
+    "nnef-oam",
+    "nnssf-nsselection",
+    "nudm-pp",
+    "nsmf-event-exposure",
+    "nnef-pfdmanagement",
+    "npcf-am-policy-control",
+    "nudm-ee",
+    "nnssf-nssaiavailability",
+    "namf-loc",
+    "nsmf-pdusession",
+    "npcf-policyauthorization"
+  ],
+  "nfServices.nfServiceStatus": [
+    "REGISTERED"
+  ],
+  "nfConsumerIdentification.nFName": [
+    "SMF"
+  ],
+  "nfConsumerIdentification.nodeFunctionality": [
+    "SMF"
+  ],
+  "multipleUnitUsage.usedUnitContainer.quotaManagementIndicator": [
+    "ONLINE_CHARGING",
+    "OFFLINE_CHARGING"
+  ],
+  "multipleUnitUsage.usedUnitContainer.triggers.triggerType": [
+    "USER_LOCATION_CHANGE",
+    "FINAL",
+    "QUOTA_THRESHOLD"
+  ],
+  "multipleUnitUsage.usedUnitContainer.triggers.triggerCategory": [
+    "IMMEDIATE_REPORT"
+  ],
+  "multipleUnitUsage.uPFID": [
+    "e037dcf9-c15d-4be2-af74-89d37fd04e17"
+  ],
+  "triggers.triggerType": [
+    "USER_LOCATION_CHANGE",
+    "FINAL",
+    "QUOTA_THRESHOLD"
+  ],
+  "triggers.triggerCategory": [
+    "IMMEDIATE_REPORT"
+  ],
+  "pDUSessionChargingInformation.userInformation.servedGPSI": [
+    "msisdn-7",
+    "msisdn-"
+  ],
+  "pDUSessionChargingInformation.pduSessionInformation.pduType": [
+    "IPV4"
+  ],
+  "pDUSessionChargingInformation.pduSessionInformation.servingNetworkFunctionID.servingNetworkFunctionInformation.nodeFunctionality": [
+    "AMF"
+  ],
+  "pDUSessionChargingInformation.pduSessionInformation.dnnId": [
+    "internet"
+  ],
+  "requester-nf-type": [
+    "PCF",
+    "AMF",
+    "AUSF",
+    "UDM",
+    "SMF"
+  ],
+  "target-nf-type": [
+    "PCF",
+    "AUSF",
+    "AMF",
+    "UDR",
+    "BSF",
+    "SMF",
+    "UDM",
+    "CHF",
+    "NSSF"
+  ],
+  "nfInstances.nfType": [
+    "PCF",
+    "AUSF",
+    "AMF",
+    "UDR",
+    "UDM",
+    "SMF",
+    "CHF",
+    "NSSF"
+  ],
+  "nfInstances.nfStatus": [
+    "REGISTERED"
+  ],
+  "nfInstances.nfServices.serviceName": [
+    "nudm-uecm",
+    "npcf-ue-policy-control",
+    "npcf-eventexposure",
+    "namf-evts",
+    "namf-comm",
+    "nudm-ueau",
+    "nchf-convergedcharging",
+    "nsmf-oam",
+    "nausf-auth",
+    "npcf-smpolicycontrol",
+    "namf-oam",
+    "nudm-sdm",
+    "namf-mt",
+    "npcf-bdtpolicycontrol",
+    "nudr-dr",
+    "nnssf-nsselection",
+    "nudm-pp",
+    "nsmf-event-exposure",
+    "npcf-am-policy-control",
+    "nudm-ee",
+    "nnssf-nssaiavailability",
+    "namf-loc",
+    "nsmf-pdusession",
+    "npcf-policyauthorization"
+  ],
+  "nfInstances.nfServices.nfServiceStatus": [
+    "REGISTERED"
+  ],
+  "servingNetworkName": [
+    "5G:mnc093.mcc208.3gppnetwork.org"
+  ],
+  "service-names": [
+    "nudm-ueau",
+    "nsmf-pdusession"
+  ],
+  "nfInstances.udrInfo.supportedDataSets": [
+    "SUBSCRIPTION"
+  ],
+  "authenticationMethod": [
+    "5G_AKA"
+  ],
+  "encOpcKey": [
+    "8e27b6af0e692e750f32667a3b14605d"
+  ],
+  "encPermanentKey": [
+    "8baf473f2f8fd09487cccbd7097c6862"
+  ],
+  "tenantId": [
+    "d6db34c8-8d90-4613-a22e-3525c6e4f6c8",
+    "9064a415-90d2-462d-a7ee-f5da5af4162c"
+  ],
+  "op": [
+    "replace"
+  ],
+  "authType": [
+    "5G_AKA"
+  ],
+  "authResult": [
+    "AUTHENTICATION_SUCCESS"
+  ],
+  "gpsis": [
+    "msisdn-7",
+    "msisdn-"
+  ],
+  "imsVoPs": [
+    "HOMOGENEOUS_NON_SUPPORT"
+  ],
+  "guami.amfId": [
+    "cafe00"
+  ],
+  "ratType": [
+    "NR"
+  ],
+  "preferred-locality": [
+    "area1"
+  ],
+  "nfInstances.locality": [
+    "area1"
+  ],
+  "nfInstances.pcfInfo.dnnList": [
+    "free5gc",
+    "internet"
+  ],
+  "nfInstances.nfServices.supportedFeatures": [
+    "3fff"
+  ],
+  "gpsi": [
+    "msisdn-7",
+    "msisdn-"
+  ],
+  "accessType": [
+    "3GPP_ACCESS"
+  ],
+  "pei": [
+    "imeisv-4370816125816151"
+  ],
+  "subscCats": [
+    "free5gc"
+  ],
+  "request.gpsi": [
+    "msisdn-7",
+    "msisdn-"
+  ],
+  "request.accessType": [
+    "3GPP_ACCESS"
+  ],
+  "request.pei": [
+    "imeisv-4370816125816151"
+  ],
+  "request.guami.amfId": [
+    "cafe00"
+  ],
+  "nf-id": [
+    "927bee93-c783-48f6-9988-6e320cc36f2c"
+  ],
+  "nf-type": [
+    "AMF"
+  ],
+  "slice-info-request-for-pdu-session.roamingIndication": [
+    "NON_ROAMING"
+  ],
+  "dnn": [
+    "internet"
+  ],
+  "nfInstances.smfInfo.sNssaiSmfInfoList.dnnSmfInfoList.dnn": [
+    "internet"
+  ],
+  "servingNfId": [
+    "927bee93-c783-48f6-9988-6e320cc36f2c"
+  ],
+  "n1SmMsg.contentId": [
+    "N1SmMsg",
+    "PDUSessionReleaseCommand",
+    "n1SmMsg"
+  ],
+  "anType": [
+    "3GPP_ACCESS"
+  ],
+  "ueTimeZone": [
+    "+00:00"
+  ],
+  "individualSmSubsData.dnnConfigurations.internet.pduSessionTypes.defaultSessionType": [
+    "IPV4"
+  ],
+  "individualSmSubsData.dnnConfigurations.internet.pduSessionTypes.allowedSessionTypes": [
+    "IPV4"
+  ],
+  "individualSmSubsData.dnnConfigurations.internet.sscModes.defaultSscMode": [
+    "SSC_MODE_1"
+  ],
+  "individualSmSubsData.dnnConfigurations.internet.sscModes.allowedSscModes": [
+    "SSC_MODE_2",
+    "SSC_MODE_3"
+  ],
+  "individualSmSubsData.dnnConfigurations.internet.sessionAmbr.uplink": [
+    "1000 Mbps"
+  ],
+  "individualSmSubsData.dnnConfigurations.internet.sessionAmbr.downlink": [
+    "1000 Mbps"
+  ],
+  "dnnConfigurations.internet.pduSessionTypes.defaultSessionType": [
+    "IPV4"
+  ],
+  "dnnConfigurations.internet.pduSessionTypes.allowedSessionTypes": [
+    "IPV4"
+  ],
+  "dnnConfigurations.internet.sscModes.defaultSscMode": [
+    "SSC_MODE_1"
+  ],
+  "dnnConfigurations.internet.sscModes.allowedSscModes": [
+    "SSC_MODE_2",
+    "SSC_MODE_3"
+  ],
+  "dnnConfigurations.internet.sessionAmbr.uplink": [
+    "1000 Mbps"
+  ],
+  "dnnConfigurations.internet.sessionAmbr.downlink": [
+    "1000 Mbps"
+  ],
+  "target-nf-instance-id": [
+    "927bee93-c783-48f6-9988-6e320cc36f2c"
+  ],
+  "nfInstances.amfInfo.amfSetId": [
+    "3f8"
+  ],
+  "nfInstances.amfInfo.amfRegionId": [
+    "ca"
+  ],
+  "nfInstances.amfInfo.guamiList.amfId": [
+    "cafe00"
+  ],
+  "nfInstances.defaultNotificationSubscriptions.notificationType": [
+    "N1_MESSAGES"
+  ],
+  "nfInstances.defaultNotificationSubscriptions.callbackUri": [
+    "http://amf.free5gc.org:8000/namf-callback/v1/n1-message-notify"
+  ],
+  "nfInstances.defaultNotificationSubscriptions.n1MessageClass": [
+    "5GMM"
+  ],
+  "pduSessionType": [
+    "IPV4"
+  ],
+  "subsSessAmbr.uplink": [
+    "1000 Mbps"
+  ],
+  "subsSessAmbr.downlink": [
+    "1000 Mbps"
+  ],
+  "suppFeat": [
+    "000f",
+    "F"
+  ],
+  "smPolicySnssaiData.01010203.smPolicyDnnData.internet.dnn": [
+    "internet"
+  ],
+  "smPolicySnssaiData.01112233.smPolicyDnnData.internet.dnn": [
+    "internet"
+  ],
+  "dnns": [
+    "internet"
+  ],
+  "sessRules.SessRuleId-1.authSessAmbr.uplink": [
+    "1000 Mbps"
+  ],
+  "sessRules.SessRuleId-1.authSessAmbr.downlink": [
+    "1000 Mbps"
+  ],
+  "sessRules.SessRuleId-1.sessRuleId": [
+    "SessRuleId-1"
+  ],
+  "pccRules.PccRuleId-1.flowInfos.flowDescription": [
+    "permit out ip from any to assigned"
+  ],
+  "pccRules.PccRuleId-1.flowInfos.packFiltId": [
+    "PackFiltId-0"
+  ],
+  "pccRules.PccRuleId-1.flowInfos.flowDirection": [
+    "BIDIRECTIONAL"
+  ],
+  "pccRules.PccRuleId-1.pccRuleId": [
+    "PccRuleId-1"
+  ],
+  "pccRules.PccRuleId-1.refChgData": [
+    "ChgId-1"
+  ],
+  "pccRules.PccRuleId-2.flowInfos.flowDescription": [
+    "permit out ip from 1.1.1.1/32 to assigned"
+  ],
+  "pccRules.PccRuleId-2.flowInfos.flowDirection": [
+    "DOWNLINK"
+  ],
+  "pccRules.PccRuleId-2.pccRuleId": [
+    "PccRuleId-2"
+  ],
+  "pccRules.PccRuleId-2.refChgData": [
+    "ChgId-2"
+  ],
+  "qosDecs.1.maxbrUl": [
+    "208 Mbps"
+  ],
+  "qosDecs.1.maxbrDl": [
+    "208 Mbps"
+  ],
+  "qosDecs.1.gbrUl": [
+    "108 Mbps"
+  ],
+  "qosDecs.1.gbrDl": [
+    "108 Mbps"
+  ],
+  "chgDecs.ChgId-1.chgId": [
+    "ChgId-1"
+  ],
+  "chgDecs.ChgId-1.meteringMethod": [
+    "VOLUME"
+  ],
+  "chgDecs.ChgId-1.reportingLevel": [
+    "RAT_GR_LEVEL"
+  ],
+  "chgDecs.ChgId-2.chgId": [
+    "ChgId-2"
+  ],
+  "chgDecs.ChgId-2.meteringMethod": [
+    "VOLUME"
+  ],
+  "chgDecs.ChgId-2.reportingLevel": [
+    "RAT_GR_LEVEL"
+  ],
+  "policyCtrlReqTriggers": [
+    "PS_DA_OFF",
+    "AC_TY_CH",
+    "RES_MO_RE",
+    "RAT_TY_CH",
+    "DEF_QOS_CH",
+    "PLMN_CH",
+    "QOS_NOTIF",
+    "UE_IP_CH",
+    "SE_AMBR_CH"
+  ],
+  "n1MessageContainer.n1MessageClass": [
+    "SM"
+  ],
+  "n1MessageContainer.n1MessageContent.contentId": [
+    "GSM_NAS"
+  ],
+  "n2InfoContainer.n2InformationClass": [
+    "SM"
+  ],
+  "n2InfoContainer.smInfo.n2InfoContent.ngapIeType": [
+    "PDU_RES_SETUP_REQ"
+  ],
+  "n2InfoContainer.smInfo.n2InfoContent.ngapData.contentId": [
+    "N2SmInformation"
+  ],
+  "cause": [
+    "CONTEXT_NOT_FOUND",
+    "SUBSCRIPTION_NOT_FOUND",
+    "N1_N2_TRANSFER_INITIATED",
+    "REL_DUE_TO_DUPLICATE_SESSION_ID"
+  ],
+  "sessRules.SessRuleId-2.authSessAmbr.uplink": [
+    "1000 Mbps"
+  ],
+  "sessRules.SessRuleId-2.authSessAmbr.downlink": [
+    "1000 Mbps"
+  ],
+  "sessRules.SessRuleId-2.sessRuleId": [
+    "SessRuleId-2"
+  ],
+  "qosDecs.2.maxbrUl": [
+    "407 Mbps"
+  ],
+  "qosDecs.2.maxbrDl": [
+    "407 Mbps"
+  ],
+  "qosDecs.2.gbrUl": [
+    "207 Mbps"
+  ],
+  "qosDecs.2.gbrDl": [
+    "207 Mbps"
+  ],
+  "n2SmInfo.contentId": [
+    "PDUSessionResourceSetupRequestTransfer",
+    "N2SmInfo",
+    "PDUResourceReleaseCommand"
+  ],
+  "n2SmInfoType": [
+    "PDU_RES_REL_RSP",
+    "PDU_RES_SETUP_RSP",
+    "PDU_RES_SETUP_REQ",
+    "PDU_RES_REL_CMD"
+  ],
+  "upCnxState": [
+    "ACTIVATING",
+    "DEACTIVATED"
+  ],
+  "statusInfo.resourceStatus": [
+    "RELEASED"
+  ],
+  "jsonData.error.type": [
+    "Resource Not Found"
+  ],
+  "jsonData.error.title": [
+    "SMContext Ref is not found"
+  ],
+  "jsonData.upCnxState": [
+    "DEACTIVATED"
+  ],
+  "sequenceNumber.sqn": [
+    "00000000002a",
+    "00000000002c",
+    "00000000002e",
+    "0000000000a1"
+  ],
+  "value.sqn": [
+    "0000000000a2",
+    "00000000002f",
+    "00000000002d",
+    "00000000002b"
+  ],
+  "n1n2FailureTxfNotifURI": [
+    "http://smf.free5gc.org:8000"
+  ],
+  "data.cause": [
+    "ATTEMPTING_TO_REACH_UE"
+  ],
+  "headers.Location": [
+    "http://amf.free5gc.org:8000/3",
+    "http://amf.free5gc.org:8000/2",
+    "http://amf.free5gc.org:8000/1"
+  ],
+  "value.amfId": [
+    "cafe00"
+  ],
+  "1.op": [
+    "replace"
+  ],
+  "title": [
+    "Subscription not found"
+  ],
+  "udrInfo.supportedDataSets": [
+    "SUBSCRIPTION"
+  ],
+  "error.cause": [
+    "HIGHER_PRIORITY_REQUEST_ONGOING"
+  ],
+  "amfInfo.amfSetId": [
+    "3f8"
+  ],
+  "amfInfo.amfRegionId": [
+    "ca"
+  ],
+  "amfInfo.guamiList.amfId": [
+    "cafe00"
+  ],
+  "defaultNotificationSubscriptions.notificationType": [
+    "N1_MESSAGES"
+  ],
+  "defaultNotificationSubscriptions.callbackUri": [
+    "http://amf.free5gc.org:8000/namf-callback/v1/n1-message-notify"
+  ],
+  "defaultNotificationSubscriptions.n1MessageClass": [
+    "5GMM"
+  ],
+  "locality": [
+    "area1"
+  ],
+  "smfInfo.sNssaiSmfInfoList.dnnSmfInfoList.dnn": [
+    "internet"
+  ],
+  "pcfInfo.dnnList": [
+    "free5gc",
+    "internet"
+  ],
+  "nfServices.supportedFeatures": [
+    "3fff"
+  ],
+  "sequenceNumber.sqnScheme": [
+    "GENERAL"
+  ]
+}

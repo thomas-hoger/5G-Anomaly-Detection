@@ -1,42 +1,17 @@
-"""
-Kedro nodes for packet dissection pipeline
-"""
-
-import pandas as pd
-import pyshark
-import tqdm
-
-from networkanomalydetection.core.trace_dissection.dissect_packet import dissect_packet
+from networkanomalydetection.core.trace_dissection.dissect_packet import dissect_packets
 
 
-def trace_dissection(
-    pkts: pyshark.FileCapture,
-    banned_features: list[str],
-    label_dataframe: pd.DataFrame,
-) -> list[dict]:
-    """
-    Process all PCAP files in the input directory.
+def trace_dissection(pkt_files: dict, banned_features: list[str], label_dataframe_files: dict):
 
-    Args:
-        trace_file: Directory containing PCAP files
-        banned_features: List of banned feature names
-        buffer_size: Buffer size for processing
+    dissected_files = {}
 
-    Returns:
-        Dictionary mapping filename to dissected packet data
-    """
+    for file, pkt_loader in pkt_files.items():
 
-    result = []
+        csv_file   = file.replace("pcap","csv")
+        csv_loader = label_dataframe_files[csv_file]
 
-    for i, pkt in enumerate(tqdm.tqdm(pkts, desc="Dissecting packets", unit="pkt", total=len(label_dataframe))):
-        dissected_pkt = dissect_packet(pkt, banned_features)
+        json_file = file.replace("pcap","json")
 
-        for dissected_layer in dissected_pkt:
-            pkt_label_entry = label_dataframe.loc[i]
+        dissected_files[json_file] =  dissect_packets(pkt_loader(), banned_features, csv_loader())
 
-            if dissected_layer:
-                dissected_layer["common"]["is_attack"] = str(pkt_label_entry["is_attack"])
-                dissected_layer["common"]["type"] = pkt_label_entry["type"]
-                result.append(dissected_layer)
-
-    return result
+    return dissected_files

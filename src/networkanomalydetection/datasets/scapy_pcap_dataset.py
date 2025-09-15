@@ -2,7 +2,7 @@ from kedro.io import AbstractDataset
 from scapy.utils import rdpcap, wrpcap
 
 
-class ScapyPcapDataSet(AbstractDataset):
+class ScapyPcapDataset(AbstractDataset):
     def __init__(self, filepath: str):
         self._filepath = filepath
 

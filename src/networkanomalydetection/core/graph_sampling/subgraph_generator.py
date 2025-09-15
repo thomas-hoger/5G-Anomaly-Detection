@@ -14,7 +14,7 @@ class SubgraphSampler:
     CENTRÉ UNIQUEMENT SUR NŒUDS CENTRAUX
     """
 
-    def __init__(self, networkx_graph: nx.MultiDiGraph,
+    def __init__(self, networkx_graph: nx.Graph,
                  radius: int = 2):
 
         self.graph = networkx_graph
@@ -191,7 +191,7 @@ class BatchProcessor:
                 logger.info(f"Processed: {processed} subgraphs, Failed: {failed}")
 
 
-def create_training_pipeline(vectorized_graph: nx.MultiDiGraph,
+def create_training_pipeline(vectorized_graph: nx.Graph,
                            radius: int = 2,
                            show_progress: bool = True) -> Iterator[Tuple[int, list[Dict]]]:
     """Pipeline complet génération + conversion avec progression"""

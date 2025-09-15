@@ -3,73 +3,88 @@
 
 # -> Input
 initial_raw_file:
-  type: networkanomalydetection.datasets.scapy_pcap_dataset.ScapyPcapDataSet
-  filepath: data/initial_raw/benign.pcap
+  type: partitions.PartitionedDataset
+  path: data/initial_raw
+  dataset:
+    type: networkanomalydetection.datasets.scapy_pcap_dataset.ScapyPcapDataset
 
 # <- Output
 trace_clean:
-  type: networkanomalydetection.datasets.scapy_pcap_dataset.ScapyPcapDataSet
-  filepath: data/trace_clean/benign.pcap
+  type: partitions.PartitionedDataset
+  path: data/trace_clean
+  dataset:
+    type: networkanomalydetection.datasets.scapy_pcap_dataset.ScapyPcapDataset
 
 trace_labels:
-  type: pandas.CSVDataset 
-  filepath: data/trace_labels/benign.csv
+  type: partitions.PartitionedDataset
+  path: data/trace_labels
+  dataset:
+    type: pandas.CSVDataset
 
 # ==== 2) trace_dissection
 
-# -> Input
+# <- Input
 trace_to_dissect:
-  type: networkanomalydetection.datasets.pyshark_pcap_dataset.PySharkPcapDataSet
-  filepath: data/trace_clean/benign.pcap
+  type: partitions.PartitionedDataset
+  path: data/trace_clean
+  dataset:
+    type: networkanomalydetection.datasets.pyshark_pcap_dataset.PySharkPcapDataset
 
 # <- Output
 trace_dissected:
-  type: json.JSONDataset
-  filepath: data/trace_dissection/benign.json
+  type: partitions.PartitionedDataset
+  path: data/trace_dissection
+  dataset:
+    type: json.JSONDataset
 
 # ==== 3) graph_construction
 
 # <- Output
 initial_graph:
-  type: pickle.PickleDataset  
-  filepath: data/graph_construction/benign.pkl
+  type: partitions.PartitionedDataset
+  path: data/graph_construction
+  dataset:
+    type: pickle.PickleDataset  
 
 # ==== 4) graph_visualization
 
+# <- Output
 initial_graph_display:
-  type: text.TextDataset  
-  filepath: data/reporting/graph_status.html
+  type: partitions.PartitionedDataset
+  path: data/initial_graph_display
+  dataset:
+    type: text.TextDataset 
 
+# ==== 5) feature_split_type
 
+# <- Output
+feature_words:
+  type: partitions.PartitionedDataset
+  path: data/feature_split/words
+  dataset:
+    type: json.JSONDataset
 
+feature_floats:
+  type: partitions.PartitionedDataset
+  path: data/feature_split/floats
+  dataset:
+    type: json.JSONDataset
 
+# ==== 6) graph_vectorization
 
-
-
-# Graphe vectorisé 
+# <- Output
 vectorized_graph:
-  type: pickle.PickleDataset
-  filepath: data/vectorized_graph/vectorized_graph.pkl
+  type: partitions.PartitionedDataset
+  path: data/graph_vectorization
+  dataset:
+    type: pickle.PickleDataset 
 
-vectorization_report:
-  type: json.JSONDataset
-  filepath: data/reporting/vectorization_report.json
+# ==== 7) graph_sampling
 
-vectorization_summary:
-  type: json.JSONDataset
-  filepath: data/reporting/vectorization_summary.json
-
-
-# Graphe vectorisé : baseline TF-IDF + GMM
-# Graphe vectorisé avec méthode baseline
-baseline_vectorized_graph:
-  type: pickle.PickleDataset
-  filepath: data/vectorized_graph/baseline_vectorized_graph.pkl
-
-# Rapport de vectorisation baseline
-baseline_vectorization_report:
-  type: text.TextDataset
-  filepath: data/reporting/baseline_vectorization_report.json
+# <- Output
+subgraphs:
+  type: pickle.PickleDataset  
+  filepath: data/graph_sampling/benign.pkl
 
 # === CONVERSION GNN : Pipeline Vectorisation ===
 gnn_pytorch_data:

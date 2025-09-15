@@ -7,19 +7,14 @@ from .nodes import trace_dissection
 
 
 def create_pipeline(**kwargs) -> Pipeline:
-    """
-    Create the dissection pipeline.
 
-    Returns:
-        Kedro Pipeline for packet dissection
-    """
     return pipeline([
         node(
             func=trace_dissection,
             inputs={
-                "pkts": "trace_to_dissect",
+                "pkt_files": "trace_to_dissect",
                 "banned_features": "params:banned_features",
-                "label_dataframe": "trace_labels"
+                "label_dataframe_files": "trace_labels"
             },
             outputs="trace_dissected",
             name="dissect_pcap_files"

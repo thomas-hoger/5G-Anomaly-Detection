@@ -2,7 +2,7 @@ import pyshark
 from kedro.io import AbstractDataset
 
 
-class PySharkPcapDataSet(AbstractDataset):
+class PySharkPcapDataset(AbstractDataset):
     def __init__(self, filepath: str):
         self._filepath = filepath
 

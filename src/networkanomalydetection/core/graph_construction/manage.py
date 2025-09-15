@@ -2,7 +2,7 @@ from enum import Enum
 
 import networkx as nx
 
-topology_graph = nx.MultiDiGraph()
+topology_graph = nx.Graph()
 opened_stream = {}
 
 class NodeType(Enum):
@@ -21,11 +21,8 @@ def find_edge(attr_name: str, attr_value: str) -> tuple[int,int]|None:
             return (u, v)
     return None
 
-def find_stream(ip_src: str, ip_dst: str, stream_id: int|None, stream_response: bool|None) -> int|None:
+def find_stream(ip_src: str, ip_dst: str, stream_id: int, stream_response: bool) -> int|None:
     central_node_id = None
-
-    if not stream_id or not stream_response:
-        return None
 
     # The stream have been opened in the same direction (i.e the message is the continuation of a request)
     if (ip_src, ip_dst) in opened_stream and stream_id in opened_stream[(ip_src, ip_dst)]:
@@ -67,7 +64,16 @@ def packet_to_nodes(dissected_pkt: dict, packet_id: int) -> int:
         central_node_id = topology_graph.number_of_nodes()
         topology_graph.add_node(central_node_id, label="", node_type=NodeType.CENTRAL.value, packet_id=packet_id)
 
-    # for common, http2, pfcp ... 
+    # If the stream is found, we don't want to add the IPs again
+    else:
+        del dissected_pkt["common"]["ip_src"]
+        del dissected_pkt["common"]["ip_dst"]
+
+    # Dont put this values as new nodes, but as attributes of the central node
+    topology_graph.nodes[central_node_id]["is_attack"] = dissected_pkt["common"].pop("is_attack")
+    topology_graph.nodes[central_node_id]["type"]      = dissected_pkt["common"].pop("type")
+
+    # for common, http2, pfcp ...
     for parameters in dissected_pkt.values():
 
         for param_name, param_value in parameters.items():

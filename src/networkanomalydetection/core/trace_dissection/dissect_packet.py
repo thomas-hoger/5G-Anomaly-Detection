@@ -1,5 +1,8 @@
 import re
 
+import pandas as pd
+import pyshark
+import tqdm
 from scapy.all import Packet
 
 from .http2_parser import dissect_http2
@@ -101,7 +104,7 @@ def dissect_packet(packet: Packet, feature_ban_list: list[str]) -> list[dict]:
         "common": {    # Fields that will be present in the graph
             "ip_src": str(packet.ip.src),
             "ip_dst": str(packet.ip.dst),
-            "ts": float(packet.sniff_timestamp)
+            # "ts": float(packet.sniff_timestamp)
         }
     }
 
@@ -121,3 +124,19 @@ def dissect_packet(packet: Packet, feature_ban_list: list[str]) -> list[dict]:
                 dissected_layers.append(layer_with_infos)
 
     return dissected_layers
+
+def dissect_packets(packets:pyshark.FileCapture, banned_features: list[str], label_dataframe:pd.DataFrame) -> list[dict]:
+
+    result = []
+    for i, pkt in enumerate(tqdm.tqdm(packets, desc="Dissecting packets", unit="pkt", total=len(packets))):
+        dissected_pkt = dissect_packet(pkt, banned_features)
+
+        for dissected_layer in dissected_pkt:
+            pkt_label_entry = label_dataframe.loc[i]
+
+            if dissected_layer:
+                dissected_layer["common"]["is_attack"] = str(pkt_label_entry["is_attack"])
+                dissected_layer["common"]["type"] = pkt_label_entry["type"]
+                result.append(dissected_layer)
+
+    return result

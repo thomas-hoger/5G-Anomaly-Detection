@@ -15,3 +15,13 @@ banned_features:
   - "dnnInfos"
   - "jwt.alg"
   - "jwt.typ"
+
+identifier_list:
+  - ip_src
+  - ip_dst
+  - Timestamp
+  - jwt.iat
+  - jwt.exp
+
+input_tensor_dimension: 128
+subgraph_history_length: 50

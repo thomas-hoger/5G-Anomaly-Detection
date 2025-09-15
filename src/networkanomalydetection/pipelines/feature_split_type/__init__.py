@@ -1,5 +1,5 @@
 """
-This is a boilerplate pipeline 'baseline_vectorization'
+This is a boilerplate pipeline 'vectorization'
 generated using Kedro 1.0.0
 """
 

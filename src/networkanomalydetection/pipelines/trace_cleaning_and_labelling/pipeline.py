@@ -17,7 +17,7 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(
             func=trace_labelling,
             inputs={
-                "pkts": "initial_raw_file",
+                "pkt_files": "initial_raw_file",
                 "evil_ip": "params:evil_ip",
             },
             outputs=["trace_clean", "trace_labels"],
