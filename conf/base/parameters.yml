@@ -25,3 +25,9 @@ identifier_list:
 
 input_tensor_dimension: 128
 subgraph_history_length: 50
+
+window_size: 100
+window_shift: 50
+
+split_ratio: 0.80
+batch_size: 5

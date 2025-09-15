@@ -1,6 +1,7 @@
 from enum import Enum
 
 import networkx as nx
+import tqdm
 
 topology_graph = nx.Graph()
 opened_stream = {}
@@ -90,3 +91,15 @@ def packet_to_nodes(dissected_pkt: dict, packet_id: int) -> int:
             topology_graph.add_edge(central_node_id, parameted_node_id, label=param_name)
 
     return central_node_id
+
+def build_graph(trace:list[dict]) -> nx.Graph:
+
+    global topology_graph  # noqa: PLW0603
+    topology_graph = nx.Graph()
+
+    packet_id = 0
+    for packet in tqdm.tqdm(trace,total=len(trace), desc="Processing packets for building initial graph"):
+        packet_to_nodes(packet, packet_id)
+        packet_id += 1
+
+    return topology_graph.copy()

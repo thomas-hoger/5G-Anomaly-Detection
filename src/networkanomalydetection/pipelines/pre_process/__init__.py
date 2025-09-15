@@ -1,8 +1,3 @@
-"""
-This is a boilerplate pipeline 'vectorization'
-generated using Kedro 1.0.0
-"""
-
 from .pipeline import create_pipeline
 
 __all__ = ["create_pipeline"]

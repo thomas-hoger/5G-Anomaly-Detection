@@ -3,8 +3,8 @@ import re
 import networkx as nx
 import tqdm
 
-from networkanomalydetection.core.feature_vectorization.vectorizer import is_float
-from networkanomalydetection.core.graph_construction.manage import NodeType
+from networkanomalydetection.core.feature.vectorization import is_float
+from networkanomalydetection.core.graph.construction import NodeType
 
 
 def split_by_type(graph: nx.Graph, identifier_list:list[str]) -> tuple[nx.Graph, dict[str, any]]:

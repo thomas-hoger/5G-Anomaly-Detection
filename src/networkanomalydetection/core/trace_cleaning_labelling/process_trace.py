@@ -1,6 +1,7 @@
 import random
 
 import pandas as pd
+import tqdm
 from scapy.all import Packet, bind_layers
 from scapy.fields import BitField, IntField, StrFixedLenField
 from scapy.layers.inet import IP, UDP, Ether
@@ -57,7 +58,7 @@ def process(packets: PacketList, evil_ip: str) -> tuple[PacketList, pd.DataFrame
     attack_marker_start = None
     benign_marker_start = None
 
-    for i, pkt in enumerate(packets):
+    for i, pkt in enumerate(tqdm.tqdm(packets, desc="Clean and label packets", unit="pkt", total=len(packets))):
 
         # Find markers
         if pkt.haslayer(Marker):
@@ -98,6 +99,9 @@ def process(packets: PacketList, evil_ip: str) -> tuple[PacketList, pd.DataFrame
                 "is_attack": int(is_attack),
                 "type": attack_marker_start.type.decode() if is_attack else benign_marker_start.type.decode()
             })
+
+        if i > 5000:
+            break
 
     df = pd.DataFrame(df_rows)
     return processed_packets, df
