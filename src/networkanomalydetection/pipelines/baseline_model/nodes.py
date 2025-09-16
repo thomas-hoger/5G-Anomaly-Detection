@@ -14,7 +14,7 @@ from networkanomalydetection.core.gnn.models.data_utils import (
     temporal_train_val_split,
 )
 from networkanomalydetection.core.gnn.models.gnn_autoencoder import (
-    EnhancedGNNAutoEncoder,
+    GNNAutoEncoder,
 )
 from networkanomalydetection.core.gnn.models.trainer import GNNTrainer
 
@@ -92,7 +92,7 @@ def train_gnn_model(train_val_split: Dict[str, List],
     )
 
     # Initialiser le modèle
-    model = EnhancedGNNAutoEncoder(**model_params)
+    model = GNNAutoEncoder(**model_params)
     logger.info(f"Modèle initialisé: {sum(p.numel() for p in model.parameters())} paramètres")
 
     # Initialiser le trainer

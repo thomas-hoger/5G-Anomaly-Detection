@@ -23,11 +23,10 @@ identifier_list:
   - jwt.iat
   - jwt.exp
 
-input_tensor_dimension: 128
-subgraph_history_length: 50
+input_tensor_dimension: 1024
 
-window_size: 100
-window_shift: 50
+window_size: 1000
+window_shift: 500
 
 split_ratio: 0.80
-batch_size: 5
+batch_size: 32

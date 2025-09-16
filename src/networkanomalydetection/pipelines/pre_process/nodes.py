@@ -7,8 +7,8 @@ from networkanomalydetection.core.feature.vectorization import vectorize_nodes
 from networkanomalydetection.core.graph.construction import build_graph
 from networkanomalydetection.core.graph.sampling import generate_subgraphs
 from networkanomalydetection.core.graph.visualization import graph_to_html
-from networkanomalydetection.core.trace_cleaning_labelling.process_trace import process
-from networkanomalydetection.core.trace_dissection.dissect_packet import dissect_packets
+from networkanomalydetection.core.trace.cleaning_labelling import process
+from networkanomalydetection.core.trace.dissection.dissect_packet import dissect_packets
 
 
 def trace_cleaning_labelling(pkt_files: dict, evil_ip:str):
