@@ -47,7 +47,7 @@ def find_stream(ip_src: str, ip_dst: str, stream_id: int, stream_response: bool)
 
     return central_node_id
 
-def packet_to_nodes(dissected_pkt: dict, packet_id: int) -> int:
+def packet_to_nodes(dissected_pkt: dict, packet_id: int, merge_stream=False) -> int:
     ip_src = dissected_pkt["common"]["ip_src"]
     ip_dst = dissected_pkt["common"]["ip_dst"]
     stream_id = stream_response = None
@@ -61,7 +61,7 @@ def packet_to_nodes(dissected_pkt: dict, packet_id: int) -> int:
     central_node_id = find_stream(ip_src, ip_dst, stream_id, stream_response)
 
     # If the stream is not found, create a new central node
-    if central_node_id is None:
+    if central_node_id is None or not merge_stream:
         central_node_id = topology_graph.number_of_nodes()
         topology_graph.add_node(central_node_id, label="", node_type=NodeType.CENTRAL.value, packet_id=packet_id)
 

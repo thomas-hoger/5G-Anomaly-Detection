@@ -2,7 +2,7 @@ import json
 from urllib.parse import parse_qs, urlparse
 
 import jwt
-from scapy.all import Packet
+from pyshark.packet.packet import Packet
 
 http_type = {
     0: "DATA",

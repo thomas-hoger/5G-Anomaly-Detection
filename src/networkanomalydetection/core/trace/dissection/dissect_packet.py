@@ -3,7 +3,7 @@ import re
 import pandas as pd
 import pyshark
 import tqdm
-from scapy.all import Packet
+from pyshark.packet.packet import Packet
 
 from .http2_parser import dissect_http2
 
@@ -119,9 +119,15 @@ def dissect_packet(packet: Packet, feature_ban_list: list[str]) -> list[dict]:
                 new_layer = remove_banned_values(new_layer, feature_ban_list)
                 new_layer = remove_empty_values(new_layer)
 
-                layer_with_infos = packet_informations.copy()
-                layer_with_infos["http2"] = new_layer
-                dissected_layers.append(layer_with_infos)
+                if "http2" not in packet_informations:
+                    packet_informations["http2"] = {}
+
+                packet_informations["http2"].update(new_layer)
+
+    for protocol in ["gtp", "ngap", "nas-5gs", "pfcp"]:
+        if protocol in packet:
+            features = {key.replace(f"{protocol}.",""):value for key,value in packet[protocol]._all_fields.items()}
+            packet_informations[protocol] = features
 
     return dissected_layers
 
@@ -129,14 +135,13 @@ def dissect_packets(packets:pyshark.FileCapture, banned_features: list[str], lab
 
     result = []
     for i, pkt in enumerate(tqdm.tqdm(packets, desc="Dissecting packets", unit="pkt", total=len(packets))):
+
         dissected_pkt = dissect_packet(pkt, banned_features)
+        pkt_label_entry = label_dataframe.loc[i]
 
-        for dissected_layer in dissected_pkt:
-            pkt_label_entry = label_dataframe.loc[i]
-
-            if dissected_layer:
-                dissected_layer["common"]["is_attack"] = str(pkt_label_entry["is_attack"])
-                dissected_layer["common"]["type"] = pkt_label_entry["type"]
-                result.append(dissected_layer)
+        if dissected_pkt:
+            dissected_pkt["common"]["is_attack"] = str(pkt_label_entry["is_attack"])
+            dissected_pkt["common"]["type"] = pkt_label_entry["type"]
+            result.append(dissected_pkt)
 
     return result

@@ -33,7 +33,7 @@ def trace_dissection(pkt_files: dict, banned_features: list[str], label_datafram
 
         json_file = file.replace("pcap","json")
 
-        dissected_files[json_file] =  dissect_packets(pkt_loader(), banned_features, csv_loader())
+        dissected_files[json_file] = dissect_packets(pkt_loader(), banned_features, csv_loader())
 
     return dissected_files
 
@@ -96,13 +96,13 @@ def feature_vectorization(graph_files:dict, feature_floats:list[float], feature_
 
 def graph_sampling(graph_files:dict, window_size:int, window_shift:int):
 
-    all_subgraphs = []
+    all_subgraphs  = []
+    subgraph_files = {}
     for file, graph_loader in graph_files.items():
 
         subgraphs = generate_subgraphs(graph_loader(), window_size, window_shift)
+        subgraph_files[file] = subgraphs
         all_subgraphs += subgraphs
-
-    subgraph_files = {f"subgraph_{i}.pkl":subgraph for i,subgraph in enumerate(all_subgraphs)}
 
     reporting = {
         "number_of_graph": len(all_subgraphs),
@@ -116,14 +116,16 @@ def graph_vectorization(graph_files:dict, batch_size:int, split_ratio:int):
     data_list = []
     for file, graph_loader in graph_files.items():
 
-        # Remove the attributes specific to central nodes to convert them to tensor
-        graph = graph_loader()
-        for n, data in graph.nodes(data=True):
-            data.pop("is_attack", None)  # None = pas d'erreur si absent
-            data.pop("type", None)
+        graph_list = graph_loader()
+        for graph in graph_list:
 
-        data = from_networkx(graph, group_node_attrs=["embedding"], group_edge_attrs=["embedding"])
-        data_list.append(data)
+            # Remove the attributes specific to central nodes to convert them to tensor
+            for n, feature in graph.nodes(data=True):
+                feature.pop("is_attack", None)  # None = pas d'erreur si absent
+                feature.pop("type", None)
+
+            data = from_networkx(graph, group_node_attrs=["embedding"], group_edge_attrs=["embedding"])
+            data_list.append(data)
 
     split_idx = int(len(data_list) * split_ratio)
 
