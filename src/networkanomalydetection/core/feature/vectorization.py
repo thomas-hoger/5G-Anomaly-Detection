@@ -25,28 +25,21 @@ def is_float(value) -> bool:
     except ValueError:
         return False
 
-def embed_float(label:float, dimension:int)-> torch.Tensor:
-    label_to_array = np.array([[label]])
-    prediction     = gmm.predict_proba(label_to_array)[0]
-    prediction     = torch.from_numpy(prediction)
-
-    # TODO: TEMPORAIRE, remplacer par fully connected
-    padding = torch.zeros(dimension - len(prediction))  # Vecteur de padding
-    padded_prediction = torch.cat((prediction, padding))
-
-    return padded_prediction
-
-def vectorize_nodes(graph: nx.Graph, float_encountered:list[float], text_encountered:list[str], identifier_list:list[str]):
+def vectorize_nodes(graph: nx.Graph, float_encountered:list[float], text_encountered:list[str], identifier_conversion:dict[str:str]):
 
     # Prepare the GMM
     init_gmm(float_encountered)
 
     # Prepare the one hot
     unique_words = list(set(text_encountered))
-    unique_words += ["identifiers", "others"]
-    word_mapping = {word: i for i, word in enumerate(unique_words)}
+    unique_words += ["others"]
+    unique_words += [value for value in identifier_conversion.values()]
+    unique_words += list(range(N_COMPONENTS))
 
-    dimension = len(unique_words)
+    word_mapping = {word: i for i, word in enumerate(unique_words)}
+    dimension    = len(unique_words)
+
+    report_dict  = {}
 
     # For each node, change its embedding
     central_node_ids = [n for n, attr in graph.nodes(data=True) if attr["node_type"] == NodeType.CENTRAL.value]
@@ -55,39 +48,44 @@ def vectorize_nodes(graph: nx.Graph, float_encountered:list[float], text_encount
         graph.nodes[central_node_id]["embedding"] = torch.zeros(dimension)
         for _, neighbor, edge_attr in graph.edges(central_node_id, data=True):
 
-            neighbor_attr = graph.nodes[neighbor]
+            # edges are always text and never id -> one hot
+            normalized_edge_label = re.sub(r'\[\d+\]', '', edge_attr["label"]) # Remove indies [0], [1], etc.
+            edge_labels = torch.tensor([word_mapping[word] for word in normalized_edge_label.split(".")])
+            edge_vects  = F.one_hot(edge_labels, num_classes=dimension)
+            edge_attr["embedding"] = edge_vects.to(torch.float32).mean(dim=0) # TODO: add weighted mean
 
             # Embed a neighbor only if it has not been embedded yet
+            neighbor_attr = graph.nodes[neighbor]
             if "embedding" not in neighbor_attr:
 
                 found = False
-                for identifier in identifier_list:
+                for identifier in identifier_conversion.keys():
                     if identifier.lower() in edge_attr["label"].lower() :
                         found = True
+                        break
 
                 # if its an id (e.g ip, port...) -> hardcode a vector
                 if found:
-                    embedding = F.one_hot(torch.tensor(word_mapping["identifiers"]), num_classes=dimension)
+                    value_to_embed = identifier_conversion[identifier]
 
                 # if its a float -> gmm
                 elif is_float(neighbor_attr["label"]):
-                    embedding = embed_float(float(neighbor_attr["label"]), dimension)
-                    embedding = F.pad(embedding, (0, dimension - embedding.size(0)), value=0)
+                    label = float(neighbor_attr["label"])
+                    value_to_embed = gmm.predict(np.array([[label]]))[0]
 
                 # if its a text -> one hot
                 else:
-                    label = neighbor_attr["label"]
-                    if label not in word_mapping:
-                        label = "others"
-                    embedding = F.one_hot(torch.tensor(word_mapping[label]), num_classes=dimension)
+                    value_to_embed = neighbor_attr["label"]
+                    if value_to_embed not in word_mapping:
+                        value_to_embed = "others"
 
+                embedding = F.one_hot(torch.tensor(word_mapping[value_to_embed]), num_classes=dimension)
                 neighbor_attr["embedding"] = embedding
 
-            # edges are always text and never id -> one hot
-            normalized = re.sub(r'\[\d+\]', '', edge_attr["label"]) # Remove indies [0], [1], etc.
-            edge_labels = torch.tensor([word_mapping[word] for word in normalized.split(".")])
-            edge_vects  = F.one_hot(edge_labels, num_classes=dimension)
+                # Store the value embeddings
+                if normalized_edge_label not in report_dict:
+                    report_dict[normalized_edge_label] = []
+                if value_to_embed not in report_dict[normalized_edge_label]:
+                    report_dict[normalized_edge_label] += [str(value_to_embed)]
 
-            edge_attr["embedding"] = edge_vects.to(torch.float32).mean(dim=0) # TODO: add weighted mean
-
-    return graph
+    return graph, report_dict

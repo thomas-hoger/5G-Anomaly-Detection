@@ -93,11 +93,10 @@ def dissect_packet(packet: Packet, feature_ban_list: list[str]) -> list[dict]:
     Returns:
         List of dissected layers
     """
-    dissected_layers = []
 
     # Check for the IP layer
     if not hasattr(packet, 'ip'):
-        return dissected_layers
+        return []
 
     # Information common to all packets
     packet_informations = {
@@ -126,10 +125,10 @@ def dissect_packet(packet: Packet, feature_ban_list: list[str]) -> list[dict]:
 
     for protocol in ["gtp", "ngap", "nas-5gs", "pfcp"]:
         if protocol in packet:
-            features = {key.replace(f"{protocol}.",""):value for key,value in packet[protocol]._all_fields.items()}
+            features = {key.replace(f"{protocol}.",""):value for key,value in packet[protocol]._all_fields.items() if key}
             packet_informations[protocol] = features
 
-    return dissected_layers
+    return packet_informations
 
 def dissect_packets(packets:pyshark.FileCapture, banned_features: list[str], label_dataframe:pd.DataFrame) -> list[dict]:
 

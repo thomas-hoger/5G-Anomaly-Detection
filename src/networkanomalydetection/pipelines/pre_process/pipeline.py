@@ -51,7 +51,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             func=feature_splitting,
             inputs={
                 "graph_files": "initial_graph",
-                "identifier_list": "params:identifier_list",
+                "identifier_conversion": "params:identifier_conversion",
             },
             outputs=["feature_words", "feature_floats"],
             name="feature_splitting"
@@ -62,7 +62,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 "graph_files": "initial_graph",
                 "feature_words": "feature_words",
                 "feature_floats": "feature_floats",
-                "identifier_list": "params:identifier_list",
+                "identifier_conversion": "params:identifier_conversion",
             },
             outputs=["vectorized_features","feature_vectorization_report"],
             name="feature_vectorization"

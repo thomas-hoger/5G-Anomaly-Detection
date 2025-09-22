@@ -15,13 +15,23 @@ banned_features:
   - "dnnInfos"
   - "jwt.alg"
   - "jwt.typ"
+  - "start_time"
+  - "end_time"
+  - "NAS_PDU"
 
-identifier_list:
-  - ip_src
-  - ip_dst
-  - Timestamp
-  - jwt.iat
-  - jwt.exp
+identifier_conversion:
+  ip_src : ip_address
+  ip_dst : ip_address
+  Timestamp : ts
+  jwt.iat : unix_ts
+  jwt.exp : unix_ts
+  pLMNIdentity : plmn_id
+  NRCellIdentity : nrcell_id
+  msg_auth_code : auth_code
+  teid : teid
+  seq_number : seq_number
+  amfId : amf_id
+  seid : seid
 
 input_tensor_dimension: 1024
 

@@ -58,38 +58,46 @@ def graph_visualization(graph_files:dict):
 
     return graph_html_files
 
-def feature_splitting(graph_files:dict, identifier_list:list[str]):
+def feature_splitting(graph_files:dict, identifier_conversion:dict[str:str]):
 
     words  = []
     floats = []
     for file, graph_loader in graph_files.items():
 
-        new_words, new_floats = split_by_type(graph_loader(), identifier_list)
+        new_words, new_floats = split_by_type(graph_loader(), identifier_conversion.keys())
 
         words += new_words
         floats += new_floats
 
     return words, floats
 
-def feature_vectorization(graph_files:dict, feature_floats:list[float], feature_words:list[str], identifier_list:list[str]):
+def feature_vectorization(graph_files:dict, feature_floats:list[float], feature_words:list[str], identifier_conversion:dict[str:str]):
 
     edge_embeddings = []
     node_embeddings = []
+
     vectorized_nodes_files = {}
+    all_unique_features    = {}
 
     for file, graph_loader in graph_files.items():
 
-        vectorized_graph = vectorize_nodes(graph_loader(), feature_floats, feature_words, identifier_list)
+        vectorized_graph, unique_features = vectorize_nodes(graph_loader(), feature_floats, feature_words, identifier_conversion)
         vectorized_nodes_files[file] = vectorized_graph
 
         node_embeddings += [np.array(data["embedding"]) for _, data in vectorized_graph.nodes(data=True) if "embedding" in data]
         edge_embeddings += [np.array(data["embedding"]) for _, _, data in vectorized_graph.edges(data=True) if "embedding" in data]
+
+        for key,values in unique_features.items():
+            if key not in all_unique_features:
+                all_unique_features[key] = []
+            all_unique_features[key] = list(set(all_unique_features[key] + values))
 
     reporting = {
         "number_of_nodes": len(node_embeddings),
         "number_of_edges": len(edge_embeddings),
         "unique_nodes_shape" : list(set([emb.shape[0] for emb in node_embeddings])),
         "unique_edges_shape" : list(set([emb.shape[0] for emb in edge_embeddings])),
+        "unique_features" : all_unique_features
     }
 
     return vectorized_nodes_files, reporting
