@@ -43,6 +43,26 @@ trace_dissected:
   dataset:
     type: json.JSONDataset
 
+# ==== 5) feature_split_type
+
+# <- Output
+feature_words:
+  type: json.JSONDataset
+  filepath: data/pre_process/vocabulary/words.json
+
+feature_floats:
+  type: json.JSONDataset
+  filepath: data/pre_process/vocabulary/floats.json
+
+# ==== 2) dissection_clean
+
+# <- Output
+dissected_clean:
+  type: partitions.PartitionedDataset
+  path: data/pre_process/dissection_clean
+  dataset:
+    type: json.JSONDataset
+
 # ==== 3) graph_construction
 
 # <- Output
@@ -60,17 +80,6 @@ initial_graph_display:
   path: data/report/initial_graph_display
   dataset:
     type: text.TextDataset 
-
-# ==== 5) feature_split_type
-
-# <- Output
-feature_words:
-  type: json.JSONDataset
-  filepath: data/pre_process/feature_split/words.json
-
-feature_floats:
-  type: json.JSONDataset
-  filepath: data/pre_process/feature_split/floats.json
 
 # ==== 6) feature_vectorization
 

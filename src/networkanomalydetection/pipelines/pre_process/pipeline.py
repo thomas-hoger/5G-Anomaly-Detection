@@ -1,7 +1,7 @@
 from kedro.pipeline import Pipeline, node, pipeline
 
 from .nodes import (
-    feature_splitting,
+    dissection_cleaning,
     feature_vectorization,
     graph_building,
     graph_sampling,
@@ -9,6 +9,7 @@ from .nodes import (
     graph_visualization,
     trace_cleaning_labelling,
     trace_dissection,
+    vocabulary_making,
 )
 
 
@@ -29,15 +30,26 @@ def create_pipeline(**kwargs) -> Pipeline:
             func=trace_dissection,
             inputs={
                 "pkt_files": "trace_to_dissect",
-                "banned_features": "params:banned_features",
                 "label_dataframe_files": "trace_labels"
             },
             outputs="trace_dissected",
             name="trace_dissection"
         ),
         node(
+            func=vocabulary_making,
+            inputs="trace_dissected",
+            outputs=["feature_words", "feature_floats"],
+            name="vocabulary_making"
+        ),
+        node(
+            func=dissection_cleaning,
+            inputs=["trace_dissected", "feature_floats", "params:banned_features"],
+            outputs="dissected_clean",
+            name="dissection_cleaning"
+        ),
+        node(
             func=graph_building,
-            inputs={"dissected_files": "trace_dissected"},
+            inputs={"dissected_files": "dissected_clean"},
             outputs="initial_graph",
             name="graph_building"
         ),
@@ -46,15 +58,6 @@ def create_pipeline(**kwargs) -> Pipeline:
             inputs={"graph_files": "initial_graph"},
             outputs="initial_graph_display",
             name="graph_visualization"
-        ),
-        node(
-            func=feature_splitting,
-            inputs={
-                "graph_files": "initial_graph",
-                "identifier_conversion": "params:identifier_conversion",
-            },
-            outputs=["feature_words", "feature_floats"],
-            name="feature_splitting"
         ),
         node(
             func=feature_vectorization,

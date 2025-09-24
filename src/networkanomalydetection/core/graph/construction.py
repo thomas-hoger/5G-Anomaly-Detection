@@ -74,21 +74,39 @@ def packet_to_nodes(dissected_pkt: dict, packet_id: int, merge_stream=False) -> 
     topology_graph.nodes[central_node_id]["is_attack"] = dissected_pkt["common"].pop("is_attack")
     topology_graph.nodes[central_node_id]["type"]      = dissected_pkt["common"].pop("type")
 
-    # for common, http2, pfcp ...
-    for parameters in dissected_pkt.values():
+    # for common
+    for edge_label, param_value in dissected_pkt["common"].items():
 
-        for param_name, param_value in parameters.items():
+        # Check if the node already exists
+        parameted_node_id = find_node("label", str(param_value))
 
-            # Check if the node already exists
-            parameted_node_id = find_node("label", str(param_value))
+        # If the node does not exist, create it
+        if not parameted_node_id:
+            parameted_node_id = topology_graph.number_of_nodes()
+            topology_graph.add_node(parameted_node_id, label=str(param_value), node_type=NodeType.PARAMETER.value, packet_id=packet_id)
 
-            # If the node does not exist, create it
-            if not parameted_node_id:
-                parameted_node_id = topology_graph.number_of_nodes()
-                topology_graph.add_node(parameted_node_id, label=str(param_value), node_type=NodeType.PARAMETER.value, packet_id=packet_id)
+        # Connect the parameter node to the central node
+        topology_graph.add_edge(central_node_id, parameted_node_id, label=edge_label)
 
-            # Connect the parameter node to the central node
-            topology_graph.add_edge(central_node_id, parameted_node_id, label=param_name)
+    # for protocols : http2, pfcp ...
+    for protocol,layers in dissected_pkt["protocols"].items():
+
+        for i,layer in enumerate(layers):
+
+            for param_name, param_value in layer.items():
+
+                # Check if the node already exists
+                parameted_node_id = find_node("label", str(param_value))
+
+                # If the node does not exist, create it
+                if not parameted_node_id:
+                    parameted_node_id = topology_graph.number_of_nodes()
+                    topology_graph.add_node(parameted_node_id, label=str(param_value), node_type=NodeType.PARAMETER.value, packet_id=packet_id)
+
+                edge_label = f"{protocol}{[i]}.{param_name}"
+
+                # Connect the parameter node to the central node
+                topology_graph.add_edge(central_node_id, parameted_node_id, label=edge_label)
 
     return central_node_id
 

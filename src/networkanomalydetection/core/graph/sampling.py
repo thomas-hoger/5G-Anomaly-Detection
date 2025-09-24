@@ -5,7 +5,7 @@ import tqdm
 def generate_subgraphs(graph: nx.Graph, window_size:int, window_shift:int) -> list[nx.Graph]:
 
     max_packet_id = max(nx.get_node_attributes(graph, "packet_id").values())
-    subgraph_count = (max_packet_id - window_size) // window_shift + 1
+    subgraph_count = max(((max_packet_id - window_size) // window_shift),0) + 1
 
     subgraphs = []
 
@@ -16,6 +16,7 @@ def generate_subgraphs(graph: nx.Graph, window_size:int, window_shift:int) -> li
             node for node, attr in graph.nodes(data=True)
             if i*window_shift <= attr["packet_id"] <= i*window_shift + window_size
         ]
-        subgraphs.append(graph.subgraph(selected_nodes))
+        subgraph = graph.subgraph(selected_nodes)
+        subgraphs.append(subgraph)
 
     return subgraphs

@@ -9,10 +9,10 @@ evil_ip : 10.100.200.66
 banned_features:
   - "versions"
   - "scheme"
-  - "ipEndPoints"
-  - "apiPrefix"
-  - "subscribedUeAmbr"
-  - "dnnInfos"
+  # - "ipEndPoints"
+  # - "apiPrefix"
+  # - "subscribedUeAmbr"
+  # - "dnnInfos"
   - "jwt.alg"
   - "jwt.typ"
   - "start_time"
@@ -20,18 +20,18 @@ banned_features:
   - "NAS_PDU"
 
 identifier_conversion:
-  ip_src : ip_address
-  ip_dst : ip_address
+  # ip_src : ip_address
+  # ip_dst : ip_address
   Timestamp : ts
-  jwt.iat : unix_ts
-  jwt.exp : unix_ts
-  pLMNIdentity : plmn_id
-  NRCellIdentity : nrcell_id
-  msg_auth_code : auth_code
-  teid : teid
-  seq_number : seq_number
-  amfId : amf_id
-  seid : seid
+  # jwt.iat : unix_ts
+  # jwt.exp : unix_ts
+  # pLMNIdentity : plmn_id
+  # NRCellIdentity : nrcell_id
+  # msg_auth_code : auth_code
+  # teid : teid
+  # seq_number : seq_number
+  # amfId : amf_id
+  # seid : seid
 
 input_tensor_dimension: 1024
 

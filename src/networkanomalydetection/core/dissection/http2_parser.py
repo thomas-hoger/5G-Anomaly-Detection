@@ -1,4 +1,5 @@
 import json
+import re
 from urllib.parse import parse_qs, urlparse
 
 import jwt
@@ -37,6 +38,7 @@ def parse_urlencoded_params(url: str) -> dict:
     parsed_url = urlparse(url)
     result['path'] = parsed_url.path
 
+    # get the param of the url
     if parsed_url.query:
         parsed_query = parse_qs(parsed_url.query)
 
@@ -51,6 +53,22 @@ def parse_urlencoded_params(url: str) -> dict:
 
             if len(new_values) == 1:
                 result[key] = new_values[0]
+
+    # remove the parameters from the path variable
+    result['path'] = result['path'].split("?")[0]
+
+    pattern_to_replace = {
+        "nfInstanceId" : r"[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}",
+        "subToNotify"  : r"subs-to-notify/([^/?]+)"
+    }
+
+    # Regex pattern for UUID of the shape "bc60cde2-eaed-45fc-9d01-79d1054eec12"
+    for key, pattern in pattern_to_replace.items():
+        match = re.search(pattern, result['path'])
+        if match:
+            value = match.group(0)
+            result[key] = value
+            result['path'] = result['path'].replace(value, key)
 
     return result
 
@@ -138,8 +156,8 @@ def dissect_http2(packet: Packet) -> list:  # noqa: PLR0912
                                     url_decoded = parse_urlencoded_params(val)
                                     content.update(url_decoded)
 
+                # Decipher the jwt
                 if content:
-                    # Decipher the jwt
                     for jwt_key in ["access_token", "authorization"]:
                         if jwt_key in content:
                             jwt_raw = content.pop(jwt_key)

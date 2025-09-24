@@ -2,13 +2,14 @@ import numpy as np
 from torch_geometric.loader import DataLoader
 from torch_geometric.utils import from_networkx
 
-from networkanomalydetection.core.feature.type_split import split_by_type
-from networkanomalydetection.core.feature.vectorization import vectorize_nodes
+from networkanomalydetection.core.dissection.dissect_packet import dissect_packets
+from networkanomalydetection.core.dissection_clean import dissection_clean
+from networkanomalydetection.core.feature_vectorization import vectorize_features
 from networkanomalydetection.core.graph.construction import build_graph
 from networkanomalydetection.core.graph.sampling import generate_subgraphs
 from networkanomalydetection.core.graph.visualization import graph_to_html
-from networkanomalydetection.core.trace.cleaning_labelling import process
-from networkanomalydetection.core.trace.dissection.dissect_packet import dissect_packets
+from networkanomalydetection.core.trace_cleaning_labelling import process
+from networkanomalydetection.core.vocabulary_making import get_vocabulary
 
 
 def trace_cleaning_labelling(pkt_files: dict, evil_ip:str):
@@ -22,7 +23,7 @@ def trace_cleaning_labelling(pkt_files: dict, evil_ip:str):
 
     return cleaned_pkts_files, label_df_files
 
-def trace_dissection(pkt_files: dict, banned_features: list[str], label_dataframe_files: dict):
+def trace_dissection(pkt_files: dict, label_dataframe_files: dict):
 
     dissected_files = {}
 
@@ -33,9 +34,31 @@ def trace_dissection(pkt_files: dict, banned_features: list[str], label_datafram
 
         json_file = file.replace("pcap","json")
 
-        dissected_files[json_file] = dissect_packets(pkt_loader(), banned_features, csv_loader())
+        dissected_files[json_file] = dissect_packets(pkt_loader(), csv_loader())
 
     return dissected_files
+
+def vocabulary_making(dissected_files:dict[str,list[dict]]):
+
+    words  = []
+    floats = []
+
+    for file, trace_loader in dissected_files.items():
+
+        new_words, new_floats = get_vocabulary(trace_loader())
+        words += new_words
+        floats += new_floats
+
+    return words, floats
+
+def dissection_cleaning(dissected_files:dict[str,list[dict]], float_list:list[float], banned_features: list[str]):
+
+    dissected_clean_files = {}
+    for file, trace_loader in dissected_files.items():
+
+        dissected_clean_files[file] = dissection_clean(trace_loader(), float_list, banned_features)
+
+    return dissected_clean_files
 
 def graph_building(dissected_files:dict[str,list[dict]]):
 
@@ -58,19 +81,6 @@ def graph_visualization(graph_files:dict):
 
     return graph_html_files
 
-def feature_splitting(graph_files:dict, identifier_conversion:dict[str:str]):
-
-    words  = []
-    floats = []
-    for file, graph_loader in graph_files.items():
-
-        new_words, new_floats = split_by_type(graph_loader(), identifier_conversion.keys())
-
-        words += new_words
-        floats += new_floats
-
-    return words, floats
-
 def feature_vectorization(graph_files:dict, feature_floats:list[float], feature_words:list[str], identifier_conversion:dict[str:str]):
 
     edge_embeddings = []
@@ -81,7 +91,7 @@ def feature_vectorization(graph_files:dict, feature_floats:list[float], feature_
 
     for file, graph_loader in graph_files.items():
 
-        vectorized_graph, unique_features = vectorize_nodes(graph_loader(), feature_floats, feature_words, identifier_conversion)
+        vectorized_graph, unique_features = vectorize_features(graph_loader(), feature_floats, feature_words, identifier_conversion)
         vectorized_nodes_files[file] = vectorized_graph
 
         node_embeddings += [np.array(data["embedding"]) for _, data in vectorized_graph.nodes(data=True) if "embedding" in data]

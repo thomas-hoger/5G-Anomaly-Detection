@@ -38,7 +38,6 @@ def normalize_imsi(d: dict) -> dict:
 
     return new_d
 
-
 def flatten_dict(d, parent_key='', sep='.') -> dict:
     """
     Recursively flattens a nested dictionary or list into a single-level dictionary with compound keys.
@@ -64,16 +63,6 @@ def flatten_dict(d, parent_key='', sep='.') -> dict:
         flat[parent_key] = d
     return flat
 
-
-def remove_banned_values(d: dict, ban_list: list) -> dict:
-    new_d = d.copy()
-    for key in d:
-        for banned_value in ban_list:
-            if banned_value in key:
-                del new_d[key]
-    return new_d
-
-
 def remove_empty_values(d: dict) -> dict:
     new_d = d.copy()
     for key, value in d.items():
@@ -81,18 +70,7 @@ def remove_empty_values(d: dict) -> dict:
             del new_d[key]
     return new_d
 
-
-def dissect_packet(packet: Packet, feature_ban_list: list[str]) -> list[dict]:
-    """
-    Dissect application level features in a given packet
-
-    Args:
-        packet: Packet to dissect
-        feature_ban_list: List of banned features
-
-    Returns:
-        List of dissected layers
-    """
+def dissect_packet(packet: Packet) -> dict:
 
     # Check for the IP layer
     if not hasattr(packet, 'ip'):
@@ -104,7 +82,8 @@ def dissect_packet(packet: Packet, feature_ban_list: list[str]) -> list[dict]:
             "ip_src": str(packet.ip.src),
             "ip_dst": str(packet.ip.dst),
             # "ts": float(packet.sniff_timestamp)
-        }
+        },
+        "protocols" : {}
     }
 
     # HTTP2 packets
@@ -115,30 +94,35 @@ def dissect_packet(packet: Packet, feature_ban_list: list[str]) -> list[dict]:
                 new_layer = layer.copy()
                 new_layer = flatten_dict(new_layer)
                 new_layer = normalize_imsi(new_layer)
-                new_layer = remove_banned_values(new_layer, feature_ban_list)
                 new_layer = remove_empty_values(new_layer)
 
-                if "http2" not in packet_informations:
-                    packet_informations["http2"] = {}
+                if "http2" not in packet_informations["protocols"]:
+                    packet_informations["protocols"]["http2"] = []
 
-                packet_informations["http2"].update(new_layer)
+                packet_informations["protocols"]["http2"].append(new_layer)
 
-    for protocol in ["gtp", "ngap", "nas-5gs", "pfcp"]:
-        if protocol in packet:
-            features = {key.replace(f"{protocol}.",""):value for key,value in packet[protocol]._all_fields.items() if key}
-            packet_informations[protocol] = features
+    for layer in packet.layers:
+        for protocol in ["gtp", "ngap", "nas-5gs", "pfcp"]:
+            if layer.layer_name == protocol:
+
+                if protocol not in packet_informations["protocols"]:
+                    packet_informations["protocols"][protocol] = []
+
+                features = {key.replace(f"{protocol}.",""):value for key,value in layer._all_fields.items() if key and value}
+                packet_informations["protocols"][protocol].append(features)
 
     return packet_informations
 
-def dissect_packets(packets:pyshark.FileCapture, banned_features: list[str], label_dataframe:pd.DataFrame) -> list[dict]:
+def dissect_packets(packets:pyshark.FileCapture, label_dataframe:pd.DataFrame) -> list[dict]:
 
     result = []
     for i, pkt in enumerate(tqdm.tqdm(packets, desc="Dissecting packets", unit="pkt", total=len(packets))):
 
-        dissected_pkt = dissect_packet(pkt, banned_features)
+        dissected_pkt   = dissect_packet(pkt)
         pkt_label_entry = label_dataframe.loc[i]
 
-        if dissected_pkt:
+        # we don't keep the packet without protocols
+        if dissected_pkt and len(dissected_pkt)>1:
             dissected_pkt["common"]["is_attack"] = str(pkt_label_entry["is_attack"])
             dissected_pkt["common"]["type"] = pkt_label_entry["type"]
             result.append(dissected_pkt)
