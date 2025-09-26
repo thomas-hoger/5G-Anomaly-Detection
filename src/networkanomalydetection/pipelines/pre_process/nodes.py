@@ -4,6 +4,7 @@ from torch_geometric.utils import from_networkx
 
 from networkanomalydetection.core.dissection.dissect_packet import dissect_packets
 from networkanomalydetection.core.dissection_clean import dissection_clean
+from networkanomalydetection.core.dissection_clusterize import clusterize
 from networkanomalydetection.core.feature_vectorization import vectorize_features
 from networkanomalydetection.core.graph.construction import build_graph
 from networkanomalydetection.core.graph.sampling import generate_subgraphs
@@ -38,27 +39,37 @@ def trace_dissection(pkt_files: dict, label_dataframe_files: dict):
 
     return dissected_files
 
-def vocabulary_making(dissected_files:dict[str,list[dict]]):
+def dissection_cleaning(dissected_files:dict[str,list[dict]], banned_features: list[str]):
+
+    dissected_clean_files = {}
+    for file, trace_loader in dissected_files.items():
+
+        dissected_clean_files[file] = dissection_clean(trace_loader(), banned_features)
+
+    return dissected_clean_files
+
+def vocabulary_making(dissected_files:dict[str,list[dict]], identifier_features:dict[str:str], nb_cluster:int):
 
     words  = []
     floats = []
 
     for file, trace_loader in dissected_files.items():
 
-        new_words, new_floats = get_vocabulary(trace_loader())
+        new_words, new_floats = get_vocabulary(trace_loader(), identifier_features, nb_cluster)
         words += new_words
         floats += new_floats
 
     return words, floats
 
-def dissection_cleaning(dissected_files:dict[str,list[dict]], float_list:list[float], banned_features: list[str]):
+def dissection_clusterize(dissected_files:dict[str,list[dict]], float_list:list[float], nb_cluster:int):
 
-    dissected_clean_files = {}
+    cluster_files = {}
+
     for file, trace_loader in dissected_files.items():
 
-        dissected_clean_files[file] = dissection_clean(trace_loader(), float_list, banned_features)
+        cluster_files[file] = clusterize(trace_loader(),float_list, nb_cluster)
 
-    return dissected_clean_files
+    return cluster_files
 
 def graph_building(dissected_files:dict[str,list[dict]]):
 
@@ -81,33 +92,27 @@ def graph_visualization(graph_files:dict):
 
     return graph_html_files
 
-def feature_vectorization(graph_files:dict, feature_floats:list[float], feature_words:list[str], identifier_conversion:dict[str:str]):
+def feature_vectorization(graph_files:dict, identifier_features:dict[str:str],  feature_words:list[str]):
 
     edge_embeddings = []
     node_embeddings = []
 
     vectorized_nodes_files = {}
-    all_unique_features    = {}
 
     for file, graph_loader in graph_files.items():
 
-        vectorized_graph, unique_features = vectorize_features(graph_loader(), feature_floats, feature_words, identifier_conversion)
+        vectorized_graph, unique_features = vectorize_features(graph_loader(), identifier_features, feature_words)
         vectorized_nodes_files[file] = vectorized_graph
 
         node_embeddings += [np.array(data["embedding"]) for _, data in vectorized_graph.nodes(data=True) if "embedding" in data]
         edge_embeddings += [np.array(data["embedding"]) for _, _, data in vectorized_graph.edges(data=True) if "embedding" in data]
-
-        for key,values in unique_features.items():
-            if key not in all_unique_features:
-                all_unique_features[key] = []
-            all_unique_features[key] = list(set(all_unique_features[key] + values))
 
     reporting = {
         "number_of_nodes": len(node_embeddings),
         "number_of_edges": len(edge_embeddings),
         "unique_nodes_shape" : list(set([emb.shape[0] for emb in node_embeddings])),
         "unique_edges_shape" : list(set([emb.shape[0] for emb in edge_embeddings])),
-        "unique_features" : all_unique_features
+        "unique_features" : unique_features
     }
 
     return vectorized_nodes_files, reporting

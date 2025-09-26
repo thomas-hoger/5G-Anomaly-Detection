@@ -63,13 +63,6 @@ def flatten_dict(d, parent_key='', sep='.') -> dict:
         flat[parent_key] = d
     return flat
 
-def remove_empty_values(d: dict) -> dict:
-    new_d = d.copy()
-    for key, value in d.items():
-        if value is None or (isinstance(value, str) and not value.strip()):
-            del new_d[key]
-    return new_d
-
 def dissect_packet(packet: Packet) -> dict:
 
     # Check for the IP layer
@@ -94,7 +87,6 @@ def dissect_packet(packet: Packet) -> dict:
                 new_layer = layer.copy()
                 new_layer = flatten_dict(new_layer)
                 new_layer = normalize_imsi(new_layer)
-                new_layer = remove_empty_values(new_layer)
 
                 if "http2" not in packet_informations["protocols"]:
                     packet_informations["protocols"]["http2"] = []
@@ -116,13 +108,13 @@ def dissect_packet(packet: Packet) -> dict:
 def dissect_packets(packets:pyshark.FileCapture, label_dataframe:pd.DataFrame) -> list[dict]:
 
     result = []
-    for i, pkt in enumerate(tqdm.tqdm(packets, desc="Dissecting packets", unit="pkt", total=len(packets))):
+    for i, pkt in enumerate(tqdm.tqdm(packets, desc="Dissecting packets", unit="pkt", total=800000)):
 
         dissected_pkt   = dissect_packet(pkt)
         pkt_label_entry = label_dataframe.loc[i]
 
         # we don't keep the packet without protocols
-        if dissected_pkt and len(dissected_pkt)>1:
+        if dissected_pkt and len(dissected_pkt["protocols"])>0:
             dissected_pkt["common"]["is_attack"] = str(pkt_label_entry["is_attack"])
             dissected_pkt["common"]["type"] = pkt_label_entry["type"]
             result.append(dissected_pkt)

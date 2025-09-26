@@ -2,6 +2,7 @@ from kedro.pipeline import Pipeline, node, pipeline
 
 from .nodes import (
     dissection_cleaning,
+    dissection_clusterize,
     feature_vectorization,
     graph_building,
     graph_sampling,
@@ -28,65 +29,67 @@ def create_pipeline(**kwargs) -> Pipeline:
         ),
         node(
             func=trace_dissection,
-            inputs={
-                "pkt_files": "trace_to_dissect",
-                "label_dataframe_files": "trace_labels"
-            },
+            inputs=["trace_to_dissect", "trace_labels"],
             outputs="trace_dissected",
             name="trace_dissection"
         ),
         node(
-            func=vocabulary_making,
-            inputs="trace_dissected",
-            outputs=["feature_words", "feature_floats"],
-            name="vocabulary_making"
-        ),
-        node(
             func=dissection_cleaning,
-            inputs=["trace_dissected", "feature_floats", "params:banned_features"],
+            inputs=["trace_dissected", "params:banned_features"],
             outputs="dissected_clean",
             name="dissection_cleaning"
         ),
         node(
+            func=vocabulary_making,
+            inputs=["dissected_clean", "params:identifier_conversion", "params:nb_cluster"],
+            outputs=["feature_words", "feature_floats"],
+            name="vocabulary_making"
+        ),
+        node(
+            func=dissection_clusterize,
+            inputs=["dissected_clean", "feature_floats", "params:nb_cluster"],
+            outputs="dissection_clusteried",
+            name="dissection_clusterize"
+        ),
+        node(
             func=graph_building,
-            inputs={"dissected_files": "dissected_clean"},
+            inputs="dissection_clusteried",
             outputs="initial_graph",
             name="graph_building"
         ),
         node(
             func=graph_visualization,
-            inputs={"graph_files": "initial_graph"},
+            inputs="initial_graph",
             outputs="initial_graph_display",
             name="graph_visualization"
         ),
         node(
             func=feature_vectorization,
-            inputs={
-                "graph_files": "initial_graph",
-                "feature_words": "feature_words",
-                "feature_floats": "feature_floats",
-                "identifier_conversion": "params:identifier_conversion",
-            },
+            inputs=[
+                "initial_graph",
+                "params:identifier_conversion",
+                "feature_words",
+            ],
             outputs=["vectorized_features","feature_vectorization_report"],
             name="feature_vectorization"
         ),
         node(
             func=graph_sampling,
-            inputs={
-                "graph_files": "vectorized_features",
-                "window_size": "params:window_size",
-                "window_shift": "params:window_shift",
-            },
+            inputs=[
+                "vectorized_features",
+                "params:window_size",
+                "params:window_shift",
+            ],
             outputs=["subgraphs","sampling_report"],
             name="graph_sampling"
         ),
         node(
             func=graph_vectorization,
-            inputs={
-                "graph_files": "subgraphs",
-                "batch_size": "params:batch_size",
-                "split_ratio": "params:split_ratio",
-            },
+            inputs=[
+                "subgraphs",
+                "params:batch_size",
+                "params:split_ratio",
+            ],
             outputs=["data_loader_1", "data_loader_2"],
             name="graph_vectorization"
         )

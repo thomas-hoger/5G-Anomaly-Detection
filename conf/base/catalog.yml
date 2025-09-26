@@ -63,6 +63,15 @@ dissected_clean:
   dataset:
     type: json.JSONDataset
 
+# ==== 2) dissection_clean
+
+# <- Output
+dissection_clusteried:
+  type: partitions.PartitionedDataset
+  path: data/pre_process/dissection_clusteried
+  dataset:
+    type: json.JSONDataset
+
 # ==== 3) graph_construction
 
 # <- Output
