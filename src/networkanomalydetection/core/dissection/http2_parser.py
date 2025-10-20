@@ -142,9 +142,13 @@ def dissect_http2(packet: Packet) -> list:  # noqa: PLR0912
                 content = {}
 
                 if fields["http2.type"] == "DATA":
-                    data = layer.get("http2.data.data").binary_value.decode('UTF8', 'replace')
-                    content.update(extract_json(data))
-                    content.update(extract_json_mime(packet))
+
+                    try:
+                        data = layer.get("http2.data.data").binary_value.decode('UTF8', 'replace')
+                        content.update(extract_json(data))
+                        content.update(extract_json_mime(packet))
+                    except Exception:
+                        pass
 
                 elif fields["http2.type"] == "HEADERS":
                     for key, val in fields.items():

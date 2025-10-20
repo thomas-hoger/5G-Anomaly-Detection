@@ -73,6 +73,7 @@ def packet_to_nodes(dissected_pkt: dict, packet_id: int, merge_stream=False) -> 
     # Dont put this values as new nodes, but as attributes of the central node
     topology_graph.nodes[central_node_id]["is_attack"] = dissected_pkt["common"].pop("is_attack")
     topology_graph.nodes[central_node_id]["type"]      = dissected_pkt["common"].pop("type")
+    dissected_pkt["common"].pop("ts")
 
     # for common
     for edge_label, param_value in dissected_pkt["common"].items():

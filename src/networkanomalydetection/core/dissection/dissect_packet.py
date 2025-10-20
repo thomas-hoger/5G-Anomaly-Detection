@@ -33,7 +33,7 @@ def normalize_imsi(d: dict) -> dict:
                 else:
                     unified_imsi = parts[0]
 
-                del new_d[key]
+                new_d[key] = value.replace(matched.group(),id_type)
                 new_d["imsi"] = unified_imsi
 
     return new_d
@@ -74,7 +74,7 @@ def dissect_packet(packet: Packet) -> dict:
         "common": {    # Fields that will be present in the graph
             "ip_src": str(packet.ip.src),
             "ip_dst": str(packet.ip.dst),
-            # "ts": float(packet.sniff_timestamp)
+            "ts": float(packet.sniff_timestamp)
         },
         "protocols" : {}
     }
@@ -84,6 +84,7 @@ def dissect_packet(packet: Packet) -> dict:
         dissected_pkt = dissect_http2(packet)
         for layer in dissected_pkt:
             if layer:
+
                 new_layer = layer.copy()
                 new_layer = flatten_dict(new_layer)
                 new_layer = normalize_imsi(new_layer)

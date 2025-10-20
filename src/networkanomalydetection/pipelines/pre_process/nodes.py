@@ -94,8 +94,8 @@ def graph_visualization(graph_files:dict):
 
 def feature_vectorization(graph_files:dict, identifier_features:dict[str:str],  feature_words:list[str]):
 
-    edge_embeddings = []
-    node_embeddings = []
+    edge_embedding_shapes = []
+    node_embedding_shapes = []
 
     vectorized_nodes_files = {}
 
@@ -104,14 +104,14 @@ def feature_vectorization(graph_files:dict, identifier_features:dict[str:str],  
         vectorized_graph, unique_features = vectorize_features(graph_loader(), identifier_features, feature_words)
         vectorized_nodes_files[file] = vectorized_graph
 
-        node_embeddings += [np.array(data["embedding"]) for _, data in vectorized_graph.nodes(data=True) if "embedding" in data]
-        edge_embeddings += [np.array(data["embedding"]) for _, _, data in vectorized_graph.edges(data=True) if "embedding" in data]
+        node_embedding_shapes += [np.array(data["embedding"]).shape[0] for _, data in vectorized_graph.nodes(data=True) if "embedding" in data]
+        edge_embedding_shapes += [np.array(data["embedding"]).shape[0] for _, _, data in vectorized_graph.edges(data=True)if "embedding" in data]
 
     reporting = {
-        "number_of_nodes": len(node_embeddings),
-        "number_of_edges": len(edge_embeddings),
-        "unique_nodes_shape" : list(set([emb.shape[0] for emb in node_embeddings])),
-        "unique_edges_shape" : list(set([emb.shape[0] for emb in edge_embeddings])),
+        "number_of_nodes": len(node_embedding_shapes),
+        "number_of_edges": len(edge_embedding_shapes),
+        "unique_nodes_shape" : list(set(node_embedding_shapes)),
+        "unique_edges_shape" : list(set(edge_embedding_shapes)),
         "unique_features" : unique_features
     }
 
