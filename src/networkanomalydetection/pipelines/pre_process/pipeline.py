@@ -64,24 +64,23 @@ def create_pipeline(**kwargs) -> Pipeline:
             name="graph_visualization"
         ),
         node(
-            func=feature_vectorization,
-            inputs=[
-                "initial_graph",
-                "params:identifier_conversion",
-                "feature_words",
-            ],
-            outputs=["vectorized_features","feature_vectorization_report"],
-            name="feature_vectorization"
-        ),
-        node(
             func=graph_sampling,
             inputs=[
-                "vectorized_features",
+                "initial_graph",
                 "params:window_size",
                 "params:window_shift",
             ],
             outputs=["subgraphs","sampling_report"],
             name="graph_sampling"
+        ),
+        node(
+            func=feature_vectorization,
+            inputs=[
+                "subgraphs",
+                "feature_words",
+            ],
+            outputs=["vectorized_features","feature_vectorization_report"],
+            name="feature_vectorization"
         ),
         node(
             func=graph_vectorization,

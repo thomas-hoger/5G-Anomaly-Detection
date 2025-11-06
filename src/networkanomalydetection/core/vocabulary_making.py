@@ -29,7 +29,7 @@ def find_feature_identifier(label:str, identifier_features: dict[str:str]):
 def get_vocabulary(packet_list:list[dict], identifier_features: dict[str:str], nb_cluster:int) -> tuple[list,list]:
 
     float_encountered = []
-    word_encountered  = ["gtp", "ngap", "nas-5gs", "pfcp", "http2", "ip_src", "ip_dst"]
+    word_encountered  = ["gtp", "ngap", "nas-5gs", "pfcp", "http2", "ip_src", "ip_dst", "ip"]
     word_encountered += [str(i) for i in range(nb_cluster)]
 
     for packet in tqdm.tqdm(packet_list, desc="Get vocabulary", unit="pkt", total=len(packet_list)):

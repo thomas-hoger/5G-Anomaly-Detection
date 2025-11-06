@@ -94,6 +94,7 @@ def dissect_packet(packet: Packet) -> dict:
 
                 packet_informations["protocols"]["http2"].append(new_layer)
 
+    second_ip_layer_present = False
     for layer in packet.layers:
         for protocol in ["gtp", "ngap", "nas-5gs", "pfcp"]:
             if layer.layer_name == protocol:
@@ -103,6 +104,15 @@ def dissect_packet(packet: Packet) -> dict:
 
                 features = {key.replace(f"{protocol}.",""):value for key,value in layer._all_fields.items() if key and value}
                 packet_informations["protocols"][protocol].append(features)
+
+                if layer.layer_name == "gtp":
+                    second_ip_layer_present = True
+
+        if layer.layer_name == "ip" and second_ip_layer_present:
+            packet_informations["protocols"]["ip"] = [{
+                "ip_src" : layer.src,
+                "ip_dst" : layer.dst
+            }]
 
     return packet_informations
 

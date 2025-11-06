@@ -47,12 +47,16 @@ trace_dissected:
 
 # <- Output
 feature_words:
-  type: json.JSONDataset
-  filepath: data/pre_process/vocabulary/words.json
+  type: partitions.PartitionedDataset
+  path: data/pre_process/vocabulary/words
+  dataset:
+    type: json.JSONDataset
 
 feature_floats:
-  type: json.JSONDataset
-  filepath: data/pre_process/vocabulary/floats.json
+  type: partitions.PartitionedDataset
+  path: data/pre_process/vocabulary/floats
+  dataset:
+    type: json.JSONDataset
 
 # ==== 2) dissection_clean
 

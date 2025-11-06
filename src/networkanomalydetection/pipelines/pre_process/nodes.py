@@ -1,4 +1,4 @@
-import numpy as np
+import tqdm
 from torch_geometric.loader import DataLoader
 from torch_geometric.utils import from_networkx
 
@@ -50,18 +50,22 @@ def dissection_cleaning(dissected_files:dict[str,list[dict]], banned_features: l
 
 def vocabulary_making(dissected_files:dict[str,list[dict]], identifier_features:dict[str:str], nb_cluster:int):
 
-    words  = []
-    floats = []
+    words  = {}
+    floats = {}
 
     for file, trace_loader in dissected_files.items():
 
         new_words, new_floats = get_vocabulary(trace_loader(), identifier_features, nb_cluster)
-        words += new_words
-        floats += new_floats
+        words[file]  = new_words
+        floats[file] = new_floats
 
     return words, floats
 
-def dissection_clusterize(dissected_files:dict[str,list[dict]], float_list:list[float], nb_cluster:int):
+def dissection_clusterize(dissected_files:dict[str,list[dict]], float_files:dict, nb_cluster:int):
+
+    float_list = []
+    for _, loader in float_files.items():
+        float_list += loader()
 
     cluster_files = {}
 
@@ -92,31 +96,6 @@ def graph_visualization(graph_files:dict):
 
     return graph_html_files
 
-def feature_vectorization(graph_files:dict, identifier_features:dict[str:str],  feature_words:list[str]):
-
-    edge_embedding_shapes = []
-    node_embedding_shapes = []
-
-    vectorized_nodes_files = {}
-
-    for file, graph_loader in graph_files.items():
-
-        vectorized_graph, unique_features = vectorize_features(graph_loader(), identifier_features, feature_words)
-        vectorized_nodes_files[file] = vectorized_graph
-
-        node_embedding_shapes += [np.array(data["embedding"]).shape[0] for _, data in vectorized_graph.nodes(data=True) if "embedding" in data]
-        edge_embedding_shapes += [np.array(data["embedding"]).shape[0] for _, _, data in vectorized_graph.edges(data=True)if "embedding" in data]
-
-    reporting = {
-        "number_of_nodes": len(node_embedding_shapes),
-        "number_of_edges": len(edge_embedding_shapes),
-        "unique_nodes_shape" : list(set(node_embedding_shapes)),
-        "unique_edges_shape" : list(set(edge_embedding_shapes)),
-        "unique_features" : unique_features
-    }
-
-    return vectorized_nodes_files, reporting
-
 def graph_sampling(graph_files:dict, window_size:int, window_shift:int):
 
     all_subgraphs  = []
@@ -134,6 +113,41 @@ def graph_sampling(graph_files:dict, window_size:int, window_shift:int):
 
     return subgraph_files, reporting
 
+def feature_vectorization(graph_files:dict, word_files:dict):
+
+    feature_words = []
+    for _, loader in word_files.items():
+        feature_words += loader()
+
+    vectorized_nodes_files = {}
+    reporting_files = {}
+
+    for file, graph_loader in graph_files.items():
+
+        graph_list = graph_loader()
+        file_name = file.replace(".pkl", "")
+
+        reporting = {
+            "number_of_nodes" : [],
+            "number_of_edges" : [],
+            "unique_features" : []
+        }
+
+        for i,graph in tqdm.tqdm(enumerate(graph_list), desc="Feature vectorization", unit="graph", total=len(graph_list)):
+
+            vectorized_graph, unique_features = vectorize_features(graph, feature_words)
+
+            subgraph_file_name = f"{file_name}_subgraph_{i}.pkl"
+            vectorized_nodes_files[subgraph_file_name] = vectorized_graph
+
+            reporting["number_of_nodes"] = len(vectorized_graph.nodes)
+            reporting["number_of_edges"] = len(vectorized_graph.edges)
+            reporting["unique_features"] = len(unique_features)
+
+        reporting_files[file] = reporting
+
+    return vectorized_nodes_files, reporting_files
+
 def graph_vectorization(graph_files:dict, batch_size:int, split_ratio:int):
 
     data_list = []
@@ -141,18 +155,12 @@ def graph_vectorization(graph_files:dict, batch_size:int, split_ratio:int):
 
         graph_list = graph_loader()
         for graph in graph_list:
-
-            # Remove the attributes specific to central nodes to convert them to tensor
-            for n, feature in graph.nodes(data=True):
-                feature.pop("is_attack", None)  # None = pas d'erreur si absent
-                feature.pop("type", None)
-
             data = from_networkx(graph, group_node_attrs=["embedding"], group_edge_attrs=["embedding"])
             data_list.append(data)
 
     split_idx = int(len(data_list) * split_ratio)
 
-    data_loader_1 = DataLoader(data_list[:split_idx], batch_size, shuffle=True)
-    data_loader_2 = DataLoader(data_list[split_idx:], batch_size, shuffle=True)
+    data_loader_1 = DataLoader(data_list[:split_idx], batch_size, shuffle=False)
+    data_loader_2 = DataLoader(data_list[split_idx:], batch_size, shuffle=False)
 
     return data_loader_1, data_loader_2
