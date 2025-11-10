@@ -151,16 +151,16 @@ def feature_vectorization(graph_files:dict, word_files:dict):
 def graph_vectorization(graph_files:dict, batch_size:int, split_ratio:int):
 
     data_list = []
-    for file, graph_loader in graph_files.items():
-
-        graph_list = graph_loader()
-        for graph in graph_list:
-            data = from_networkx(graph, group_node_attrs=["embedding"], group_edge_attrs=["embedding"])
-            data_list.append(data)
+    for file, graph_loader in tqdm.tqdm(graph_files.items(), desc="Graph vectorization", unit="graph", total=len(graph_files)):
+        data = from_networkx(graph_loader(), group_node_attrs=["embedding"])
+        data_list.append(data)
 
     split_idx = int(len(data_list) * split_ratio)
 
     data_loader_1 = DataLoader(data_list[:split_idx], batch_size, shuffle=False)
     data_loader_2 = DataLoader(data_list[split_idx:], batch_size, shuffle=False)
+
+    print(len(data_list[:split_idx]))
+    print(len(data_list[split_idx:]))
 
     return data_loader_1, data_loader_2

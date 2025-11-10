@@ -85,7 +85,7 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(
             func=graph_vectorization,
             inputs=[
-                "subgraphs",
+                "vectorized_features",
                 "params:batch_size",
                 "params:split_ratio",
             ],
