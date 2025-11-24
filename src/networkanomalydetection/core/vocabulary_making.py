@@ -48,13 +48,13 @@ def get_vocabulary(packet_list:list[dict], identifier_features: dict[str:str], n
                         if abs(float(param_value)) < 100000:  # noqa: PLR2004
                             float_encountered.append(float(param_value))
 
-                    # Add identifiers
-                    elif not found_feature:
-                        word_encountered.append(found_feature)
+                    # # Add identifiers
+                    # elif not found_feature:
+                    #     word_encountered.append(found_feature)
 
-                    # Text
-                    else :
-                        word_encountered.append(param_value)
+                    # # Text
+                    # else :
+                    #     word_encountered.append(param_value)
 
                     # Edges are always text and never id (and they can be words separated by dots)
                     normalized = normalize_edge(param_name)
