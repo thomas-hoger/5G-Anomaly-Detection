@@ -3,14 +3,15 @@ Nœud Kedro pour le pipeline d'entraînement GNN
 """
 import logging
 
+import matplotlib.pyplot as plt
 import torch
 from torch_geometric.loader import DataLoader
 from torch_geometric.nn import GAE
 
 from networkanomalydetection.core.learning.models.baseline import (
-    BaselineAE,
+    # BaselineAE,
     GINEEncoder,
-    SimpleDecoder,
+    # SimpleDecoder,
 )
 from networkanomalydetection.core.learning.train import GNNTrainer
 
@@ -78,3 +79,15 @@ def train_gnn_model(
         "training_history": history,
         "training_params": training_params,
     }
+
+def plot_train(history:dict):
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(history['training_history']['train_history'], label='Train Loss')
+    plt.plot(history['training_history']['val_history'], label='Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss over Epochs')
+    plt.legend()
+    plt.grid()
+    plt.savefig('./data/report/figures/gnn_training_loss.png')
