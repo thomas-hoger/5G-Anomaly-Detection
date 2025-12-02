@@ -48,12 +48,12 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(
             func=dissection_clusterize,
             inputs=["dissected_clean", "feature_floats", "params:nb_cluster"],
-            outputs="dissection_clusteried",
+            outputs="dissection_clusterized",
             name="dissection_clusterize"
         ),
         node(
             func=graph_building,
-            inputs="dissection_clusteried",
+            inputs="dissection_clusterized",
             outputs="initial_graph",
             name="graph_building"
         ),

@@ -70,9 +70,9 @@ dissected_clean:
 # ==== 2) dissection_clean
 
 # <- Output
-dissection_clusteried:
+dissection_clusterized:
   type: partitions.PartitionedDataset
-  path: data/pre_process/dissection_clusteried
+  path: data/pre_process/dissection_clusterized
   dataset:
     type: json.JSONDataset
 
