@@ -132,7 +132,25 @@ data_loader_2:
   filepath: data/pre_process/data_loaders/loader_2.pkl
 
 # ==== 8) baseline_model_training
+
+# <- Input
+train_loader:
+  type: pickle.PickleDataset 
+  filepath: data/model_input/train.pkl
+
+val_loader:
+  type: pickle.PickleDataset 
+  filepath: data/model_input/val.pkl
+
+test_loader:
+  type: pickle.PickleDataset 
+  filepath: data/model_input/test.pkl
+
 # <- Output
 gnn_training_results:
   type: json.JSONDataset
   filepath: data/report/gnn_training.json
+
+gnn_testing_results:
+  type: json.JSONDataset
+  filepath: data/report/gnn_testing.json
