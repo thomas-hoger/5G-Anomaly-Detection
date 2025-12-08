@@ -1,4 +1,5 @@
 import logging
+import pickle
 
 import torch
 from torch import nn, optim
@@ -45,23 +46,6 @@ class GNNTrainer:
         self.patience_counter = 0
 
     # -----------------------------------------------------------
-    # LOSS
-    # -----------------------------------------------------------
-    def compute_loss(self, z, data):
-        pos_edge_index = data.edge_index
-        neg_edge_index = negative_sampling(
-            edge_index=pos_edge_index,
-            num_nodes=data.num_nodes,
-            num_neg_samples=pos_edge_index.size(1)
-        ).to(self.device)
-
-        pos_pred = self.model.decoder(z, pos_edge_index)
-        neg_pred = self.model.decoder(z, neg_edge_index)
-
-        loss = -torch.log(pos_pred + 1e-15).mean() - torch.log(1 - neg_pred + 1e-15).mean()
-        return loss
-
-    # -----------------------------------------------------------
     # TRAINING STEP
     # -----------------------------------------------------------
     def train_epoch(self):
@@ -70,26 +54,29 @@ class GNNTrainer:
         num_batches = 0
 
         train_bar = tqdm(self.train_loader, desc="Training", leave=False, ncols=100)
+        batch_history = []
 
         for batch in train_bar:
             batch = batch.to(self.device)  # noqa: PLW2901
             self.optimizer.zero_grad()
 
-            # forward -> adj_pred directement
-            adj_pred = self.model(batch.x, batch.edge_index, batch.edge_attr)
-            # loss = self.compute_loss(adj_pred, batch)
-            loss = self.model.recon_loss(adj_pred, batch.edge_index)
+            z = self.model(batch.x, batch.edge_index, batch.edge_attr)
+
+            batch.latent_space = z
+            batch_history.append(batch)
+
+            loss = self.model.recon_loss(z, batch.edge_index)
 
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
             self.optimizer.step()
 
-            total_loss += loss.item()
+            total_loss  += loss.item()
             num_batches += 1
 
             train_bar.set_postfix({"loss": f"{loss.item():.4f}"})
 
-        return total_loss / num_batches
+        return total_loss / num_batches, batch_history
 
     # -----------------------------------------------------------
     # VALIDATION STEP
@@ -100,20 +87,24 @@ class GNNTrainer:
         num_batches = 0
 
         val_bar = tqdm(self.val_loader, desc="Validation", leave=False, ncols=100)
+        batch_history = []
 
         with torch.no_grad():
             for batch in val_bar:
                 batch = batch.to(self.device)  # noqa: PLW2901
 
-                adj_pred = self.model(batch.x, batch.edge_index, batch.edge_attr)
-                # loss = self.compute_loss(adj_pred, batch)
-                loss = self.model.recon_loss(adj_pred, batch.edge_index)
+                z = self.model(batch.x, batch.edge_index, batch.edge_attr)
+
+                batch.latent_space = z
+                batch_history.append(batch)
+
+                loss = self.model.recon_loss(z, batch.edge_index)
 
                 total_loss += loss.item()
                 num_batches += 1
                 val_bar.set_postfix({"val_loss": f"{loss.item():.4f}"})
 
-        return total_loss / num_batches
+        return total_loss / num_batches, batch_history
 
     # -----------------------------------------------------------
     # TRAIN LOOP
@@ -129,8 +120,8 @@ class GNNTrainer:
         epoch_bar = tqdm(range(num_epochs), desc="Training Progress", unit="epoch", ncols=120)
 
         for epoch in epoch_bar:
-            train_loss = self.train_epoch()
-            val_loss   = self.validate_epoch()
+            train_loss, train_batches_history = self.train_epoch()
+            val_loss, val_batches_history     = self.validate_epoch()
 
             self.scheduler.step(val_loss)
 
@@ -151,8 +142,14 @@ class GNNTrainer:
                 self.best_val_loss = val_loss
                 self.patience_counter = 0
                 if save_path:
-                    save_file = f"{save_path}/model_{epoch}.pth"
+                    save_file = f"{save_path}/checkpoints/model_{epoch}.pth"
                     torch.save(self.model.state_dict(), save_file)
+
+                    with open(f"{save_path}/model_data_history/train/{epoch}.pkl", 'wb') as f:
+                        pickle.dump(train_batches_history, f)
+                    with open(f"{save_path}/model_data_history/val/{epoch}.pkl", 'wb') as f:
+                        pickle.dump(val_batches_history, f)
+
             else:
                 self.patience_counter += 1
 

@@ -21,8 +21,8 @@ def vectorize_features(graph: nx.Graph, text_vocabulary:list[str]):
 
         if "embedding" not in graph.nodes[node]:
             graph.nodes[node]["embedding"] = torch.ones(dimension, dtype=torch.float32)
-        if "type" in graph.nodes[node]:
-            del graph.nodes[node]["type"]
+        if "type" not in graph.nodes[node]:
+            graph.nodes[node]["type"] = ""
         if "is_attack" not in graph.nodes[node]:
             graph.nodes[node]["is_attack"] = -1
 
@@ -31,7 +31,7 @@ def vectorize_features(graph: nx.Graph, text_vocabulary:list[str]):
         label = attrs["label"]
 
         normalized_edge = normalize_edge(label) # Remove indies [0], [1], etc.
-        edge_labels = torch.tensor([word_mapping[word] for word in normalized_edge.split(".")]) # Embed each word separately
+        edge_labels = torch.tensor([word_mapping[word] if word in word_mapping else word_mapping["others"] for word in normalized_edge.split(".")]) # Embed each word separately
         edge_vects  = F.one_hot(edge_labels, num_classes=dimension) # Get 1 tensor for each word
         graph.edges[edge]["embedding"] = edge_vects.to(torch.float32).mean(dim=0) # TODO: add weighted mean
 
