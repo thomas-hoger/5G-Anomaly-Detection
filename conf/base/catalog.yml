@@ -154,3 +154,7 @@ gnn_training_results:
 gnn_testing_results:
   type: json.JSONDataset
   filepath: data/report/gnn_testing.json
+
+last_state_dict:
+  type: pickle.PickleDataset 
+  filepath: data/checkpoints/best.pkl

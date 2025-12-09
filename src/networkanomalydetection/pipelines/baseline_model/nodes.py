@@ -6,6 +6,7 @@ import logging
 import matplotlib.pyplot as plt
 import torch
 from torch_geometric.loader import DataLoader
+from torch_geometric.data import Data
 from torch_geometric.nn import GAE
 from torch_geometric.utils import negative_sampling
 
@@ -20,8 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 def train_gnn_model(
-    train_loader: DataLoader,
-    val_loader: DataLoader,
+    train_loader: Data,
+    val_loader: Data,
     training_params: dict[str, any]
 ) -> dict[str, any]:
 
@@ -36,10 +37,13 @@ def train_gnn_model(
     # ------------------
     # PARAMÈTRES DU MODÈLE
     # ------------------
-    node_dim = len(train_loader.dataset[0].x[0])
-    edge_dim = len(train_loader.dataset[0].edge_attr[0])
+    node_dim = len(train_loader.x[0])
+    edge_dim = len(train_loader.edge_attr[0])
     hidden_dim = 64
     out_dim = 32
+
+    train_loader = DataLoader(train_loader, batch_size=training_params["batch_size"], shuffle=False)
+    val_loader = DataLoader(val_loader, batch_size=training_params["batch_size"], shuffle=False)
 
     # ------------------
     # ENCODER / DECODER
@@ -68,7 +72,7 @@ def train_gnn_model(
     # ------------------
     # ENTRAÎNEMENT
     # ------------------
-    history = trainer.train(
+    history, last_state_dict = trainer.train(
         num_epochs=training_params["num_epochs"],
         early_stopping_patience=training_params["early_stopping_patience"],
         save_path= "./data"
@@ -79,7 +83,7 @@ def train_gnn_model(
     return {
         "training_history"   : history,
         "training_params"    : training_params
-    }
+    }, last_state_dict
 
 def plot_train(history:dict):
 
@@ -93,7 +97,7 @@ def plot_train(history:dict):
     plt.grid()
     plt.savefig('./data/report/figures/gnn_training_loss.png')
 
-def test_gnn_model(test_loader: DataLoader):
+def test_gnn_model(test_loader: DataLoader, last_state_dict: dict):
 
     logger.info("Début du test du GNN")
 
@@ -103,8 +107,8 @@ def test_gnn_model(test_loader: DataLoader):
     # ------------------
     # PARAMÈTRES DU MODÈLE
     # ------------------
-    node_dim = len(test_loader.dataset[0].x[0])
-    edge_dim = len(test_loader.dataset[0].edge_attr[0])
+    node_dim = len(test_loader.x[0])
+    edge_dim = len(test_loader.edge_attr[0])
     hidden_dim = 64
     out_dim = 32
 
@@ -114,8 +118,7 @@ def test_gnn_model(test_loader: DataLoader):
     encoder = GINEEncoder(node_dim, edge_dim, hidden_dim, out_dim)
     model = GAE(encoder).to(device)
 
-    model_file = f"./data/checkpoints/model_{6}.pth"
-    model.load_state_dict(torch.load(model_file, weights_only=True))
+    model.load_state_dict(last_state_dict)
 
     model.eval()
     total_loss = 0
@@ -131,70 +134,59 @@ def test_gnn_model(test_loader: DataLoader):
             "TN" : 0
         }
 
-        for batch in test_loader:
+        # Latent space vector
+        z = model(test_loader.x, test_loader.edge_index, test_loader.edge_attr.float())
 
-            batch = batch.to(device)  # noqa: PLW2901
+        positive_edges = test_loader.edge_index
+        positive_reconstruction = model.decoder(z, positive_edges, sigmoid=True)
 
-            # Latent space vector
-            z = model(batch.x, batch.edge_index, batch.edge_attr)
+        negative_edges = negative_sampling(positive_edges, z.size(0))
+        negative_reconstruction = model.decoder(z, negative_edges, sigmoid=True)
 
-            positive_edges = batch.edge_index
-            positive_reconstruction = model.decoder(z, positive_edges, sigmoid=True)
+        for k in range(len(positive_edges.T)):
 
-            negative_edges = negative_sampling(positive_edges, z.size(0))
-            negative_reconstruction = model.decoder(z, negative_edges, sigmoid=True)
-
-            for k in range(len(positive_edges.T)):
-
-                reconstruction = int(positive_reconstruction[k]
+            reconstruction = int(positive_reconstruction[k]
 )
-                u,v = positive_edges.T[k]
+            u,v = positive_edges.T[k]
 
-                batch_id     = batch.batch[u]
-                batch_offset = batch.ptr[batch_id]
+            attack = test_loader.is_attack[u] or test_loader.is_attack[v]
+            attack_type = test_loader.type[u] or test_loader.type[v]
 
-                attack = batch.is_attack[batch_id][u-batch_offset] or batch.is_attack[batch_id][v-batch_offset]
-                attack_type = batch.type[batch_id][u-batch_offset] or batch.type[batch_id][v-batch_offset]
+            if attack_type not in cfm_by_type:
+                cfm_by_type[attack_type] = cfm.copy()
 
-                if attack_type not in cfm_by_type:
-                    cfm_by_type[attack_type] = cfm.copy()
+            if attack and reconstruction :
+                cfm_by_type[attack_type]["TP"] += 1
+            elif attack and (not reconstruction) :
+                cfm_by_type[attack_type]["FN"] += 1
+            elif (not attack) and reconstruction:
+                cfm_by_type[attack_type]["FP"] += 1
+            else:
+                cfm_by_type[attack_type]["TN"] += 1
 
-                if attack and reconstruction :
-                    cfm_by_type[attack_type]["TP"] += 1
-                elif attack and (not reconstruction) :
-                    cfm_by_type[attack_type]["FN"] += 1
-                elif (not attack) and reconstruction:
-                    cfm_by_type[attack_type]["FP"] += 1
-                else:
-                    cfm_by_type[attack_type]["TN"] += 1
+        for k in range(len(negative_edges.T)):
 
-            for k in range(len(negative_edges.T)):
-
-                reconstruction = 1 - int(negative_reconstruction[k]
+            reconstruction = 1 - int(negative_reconstruction[k]
 )
-                u,v = negative_edges.T[k]
+            u,v = negative_edges.T[k]
 
-                batch_id     = batch.batch[u]
-                batch_offset = batch.ptr[batch_id]
+            attack = test_loader.is_attack[u] or test_loader.is_attack[v]
+            attack_type = test_loader.type[u] or test_loader.type[v]
 
-                print(batch_id,batch_offset,u-batch_offset,v-batch_offset,len(batch.type[batch_id]))
-                attack = batch.is_attack[batch_id][u-batch_offset] or batch.is_attack[batch_id][v-batch_offset]
-                attack_type = batch.type[batch_id][u-batch_offset] or batch.type[batch_id][v-batch_offset]
+            if attack_type not in cfm_by_type:
+                cfm_by_type[attack_type] = cfm.copy()
 
-                if attack_type not in cfm_by_type:
-                    cfm_by_type[attack_type] = cfm.copy()
+            if attack and reconstruction :
+                cfm_by_type[attack_type]["TP"] += 1
+            elif attack and (not reconstruction) :
+                cfm_by_type[attack_type]["FN"] += 1
+            elif (not attack) and reconstruction:
+                cfm_by_type[attack_type]["FP"] += 1
+            else:
+                cfm_by_type[attack_type]["TN"] += 1
 
-                if attack and reconstruction :
-                    cfm_by_type[attack_type]["TP"] += 1
-                elif attack and (not reconstruction) :
-                    cfm_by_type[attack_type]["FN"] += 1
-                elif (not attack) and reconstruction:
-                    cfm_by_type[attack_type]["FP"] += 1
-                else:
-                    cfm_by_type[attack_type]["TN"] += 1
-
-            # Reconstruction loss
-            total_loss = model.recon_loss(z, batch.edge_index).item()
+        # Reconstruction loss
+        total_loss = model.recon_loss(z, test_loader.edge_index).item()
 
     metrics_by_type = {}
     for type,cfm in cfm_by_type.items() :

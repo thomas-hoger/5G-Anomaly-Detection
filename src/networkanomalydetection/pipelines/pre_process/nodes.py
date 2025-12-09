@@ -1,5 +1,7 @@
+import networkx as nx
+import torch
 import tqdm
-from torch_geometric.loader import DataLoader
+from torch_geometric.data import Data
 from torch_geometric.utils import from_networkx
 
 from networkanomalydetection.core.dissection.dissect_packet import dissect_packets
@@ -77,14 +79,12 @@ def dissection_clusterize(dissected_files:dict[str,list[dict]], float_files:dict
 
 def graph_building(dissected_files:dict[str,list[dict]]):
 
-    topology_graph_files = {}
-
+    traces = []
     for file, trace_loader in dissected_files.items():
+        traces += trace_loader()
 
-        pkl_file = file.replace("json","pkl")
-        topology_graph_files[pkl_file] = build_graph(trace_loader())
-
-    return topology_graph_files
+    graph = build_graph(traces)
+    return {"graph.pkl" : graph}
 
 def graph_visualization(graph_files:dict):
 
@@ -113,53 +113,76 @@ def graph_sampling(graph_files:dict, window_size:int, window_shift:int):
 
     return subgraph_files, reporting
 
-def feature_vectorization(graph_files:dict, word_files:dict):
+def feature_vectorization(graph_files:dict, word_files:dict, split_ratio:int):
 
     feature_words = []
     for _, loader in word_files.items():
         feature_words += loader()
 
-    vectorized_nodes_files = {}
     reporting_files = {}
 
     for file, graph_loader in graph_files.items():
 
-        graph_list = graph_loader()
-        # file_name = file.replace(".pkl", "")
+        graph = graph_loader()
+        max_packet_id = max(nx.get_node_attributes(graph, "packet_id").values())
+        packet_id_threshold = int(max_packet_id * split_ratio)
+
+        # Train graph vectorization
+        train_nodes = [
+            node for node, attr in graph.nodes(data=True)
+            if attr["packet_id"] <= packet_id_threshold
+        ]
+        graph_train = graph.subgraph(train_nodes)
+        data_train, unique_features_train = vectorize_features(graph_train, feature_words)
+
+        # Val graph vectorization
+        validation_nodes = [
+            node for node, attr in graph.nodes(data=True)
+            if attr["packet_id"] > packet_id_threshold
+        ]
+        graph_validation = graph.subgraph(validation_nodes)
+        data_val, unique_features_val = vectorize_features(graph_validation, feature_words)
 
         reporting = {
-            "number_of_nodes" : [],
-            "number_of_edges" : [],
-            "unique_features" : []
+            "number_of_nodes_train" : len(graph_train.nodes),
+            "number_of_edges_train" : len(graph_train.edges),
+            "unique_features_train" : len(unique_features_train),
+            "number_of_nodes_val"   : len(graph_validation.nodes),
+            "number_of_edges_val"   : len(graph_validation.edges),
+            "unique_features_val"   : len(unique_features_val)
         }
 
-        for i,graph in tqdm.tqdm(enumerate(graph_list), desc="Feature vectorization", unit="graph", total=len(graph_list)):
-
-            vectorized_graph, unique_features = vectorize_features(graph, feature_words)
-            # subgraph_file_name = f"{file_name}_subgraph_{i}.pkl"
-            graph_list[i] = vectorized_graph
-
-            reporting["number_of_nodes"] = len(vectorized_graph.nodes)
-            reporting["number_of_edges"] = len(vectorized_graph.edges)
-            reporting["unique_features"] = len(unique_features)
-
-        vectorized_nodes_files[file] = graph_list
         reporting_files[file] = reporting
 
-    return vectorized_nodes_files, reporting_files
+    return data_train, data_val, reporting_files
 
 def graph_vectorization(graph_files:dict, batch_size:int, split_ratio:int):
 
-    data_list = []
+    # for loop but in reality only 1 file in input (so just return after the first iteration)
     for file, graph_loader in tqdm.tqdm(graph_files.items(), desc="Graph vectorization", unit="graph", total=len(graph_files)):
-        for graph in graph_loader():
 
-            data = from_networkx(graph, group_node_attrs=["embedding"], group_edge_attrs=["embedding"])
-            data_list.append(data)
+        graph = graph_loader()
+        max_packet_id = max(nx.get_node_attributes(graph, "packet_id").values())
+        packet_id_threshold = int(max_packet_id * split_ratio)
 
-    split_idx = int(len(data_list) * split_ratio)
+        train_nodes = [
+            node for node, attr in graph.nodes(data=True)
+            if attr["packet_id"] <= packet_id_threshold
+        ]
 
-    data_loader_1 = DataLoader(data_list[:split_idx], batch_size, shuffle=False)
-    data_loader_2 = DataLoader(data_list[split_idx:], batch_size, shuffle=False)
+        graph_train = graph.subgraph(train_nodes)
+        data_train = from_networkx(graph_train, group_node_attrs=None, group_edge_attrs=["embedding"])
+        embedding_size = data_train.edge_attr.size[1]
+        data_train.x = torch.ones((len(graph_train.nodes), embedding_size), dtype=torch.float32)
 
-    return data_loader_1, data_loader_2
+        validation_nodes = [
+            node for node, attr in graph.nodes(data=True)
+            if attr["packet_id"] > packet_id_threshold
+        ]
+
+
+        graph_validation = graph.subgraph(validation_nodes)
+        data_validation = from_networkx(graph_validation, None, group_edge_attrs=["embedding"])
+        data_validation.x = torch.ones((len(graph_validation.nodes), embedding_size), dtype=torch.float32)
+
+        return data_train, data_validation

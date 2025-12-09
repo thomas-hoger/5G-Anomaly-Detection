@@ -10,8 +10,8 @@ def create_pipeline(**kwargs) -> Pipeline:
     return pipeline([
         node(
             func=train_gnn_model,
-            inputs=["train_loader", "test_loader", "params:training_params"],
-            outputs="gnn_training_results",
+            inputs=["train_loader", "val_loader", "params:training_params"],
+            outputs=["gnn_training_results","last_state_dict"],
             name="train_gnn"
         ),
         node(
@@ -22,7 +22,7 @@ def create_pipeline(**kwargs) -> Pipeline:
         ),
         node(
             func=test_gnn_model,
-            inputs=["test_loader"],
+            inputs=["test_loader","last_state_dict"],
             outputs="gnn_testing_results",
             name="test_gnn"
         ),

@@ -50,61 +50,28 @@ class GNNTrainer:
     # -----------------------------------------------------------
     def train_epoch(self):
         self.model.train()
-        total_loss = 0
-        num_batches = 0
+        self.optimizer.zero_grad()
 
-        train_bar = tqdm(self.train_loader, desc="Training", leave=False, ncols=100)
-        batch_history = []
+        z = self.model(self.train_loader.x, self.train_loader.edge_index, self.train_loader.edge_attr.float())
+        loss = self.model.recon_loss(z, self.train_loader.edge_index)
 
-        for batch in train_bar:
-            batch = batch.to(self.device)  # noqa: PLW2901
-            self.optimizer.zero_grad()
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+        self.optimizer.step()
 
-            z = self.model(batch.x, batch.edge_index, batch.edge_attr)
-
-            batch.latent_space = z
-            batch_history.append(batch)
-
-            loss = self.model.recon_loss(z, batch.edge_index)
-
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-            self.optimizer.step()
-
-            total_loss  += loss.item()
-            num_batches += 1
-
-            train_bar.set_postfix({"loss": f"{loss.item():.4f}"})
-
-        return total_loss / num_batches, batch_history
+        return loss.item(), z
 
     # -----------------------------------------------------------
     # VALIDATION STEP
     # -----------------------------------------------------------
     def validate_epoch(self):
+
         self.model.eval()
-        total_loss = 0
-        num_batches = 0
-
-        val_bar = tqdm(self.val_loader, desc="Validation", leave=False, ncols=100)
-        batch_history = []
-
         with torch.no_grad():
-            for batch in val_bar:
-                batch = batch.to(self.device)  # noqa: PLW2901
+            z = self.model(self.val_loader.x, self.val_loader.edge_index, self.val_loader.edge_attr)
+            loss = self.model.recon_loss(z, self.val_loader.edge_index)
 
-                z = self.model(batch.x, batch.edge_index, batch.edge_attr)
-
-                batch.latent_space = z
-                batch_history.append(batch)
-
-                loss = self.model.recon_loss(z, batch.edge_index)
-
-                total_loss += loss.item()
-                num_batches += 1
-                val_bar.set_postfix({"val_loss": f"{loss.item():.4f}"})
-
-        return total_loss / num_batches, batch_history
+        return loss.item(), z
 
     # -----------------------------------------------------------
     # TRAIN LOOP
@@ -118,15 +85,17 @@ class GNNTrainer:
         logger.info(f"Device: {self.device}")
 
         epoch_bar = tqdm(range(num_epochs), desc="Training Progress", unit="epoch", ncols=120)
-
         for epoch in epoch_bar:
-            train_loss, train_batches_history = self.train_epoch()
-            val_loss, val_batches_history     = self.validate_epoch()
+
+            # train
+            train_loss, z_train = self.train_epoch()
+            self.train_history.append(train_loss)
+
+            # val
+            val_loss, z_val = self.validate_epoch()
+            self.val_history.append(val_loss)
 
             self.scheduler.step(val_loss)
-
-            self.train_history.append(train_loss)
-            self.val_history.append(val_loss)
             lr = self.optimizer.param_groups[0]['lr']
             self.lr_history.append(lr)
 
@@ -146,9 +115,9 @@ class GNNTrainer:
                     torch.save(self.model.state_dict(), save_file)
 
                     with open(f"{save_path}/model_data_history/train/{epoch}.pkl", 'wb') as f:
-                        pickle.dump(train_batches_history, f)
+                        pickle.dump(z_train, f)
                     with open(f"{save_path}/model_data_history/val/{epoch}.pkl", 'wb') as f:
-                        pickle.dump(val_batches_history, f)
+                        pickle.dump(z_val, f)
 
             else:
                 self.patience_counter += 1
@@ -164,4 +133,4 @@ class GNNTrainer:
             "train_history": self.train_history,
             "val_history": self.val_history,
             "best_val_loss": self.best_val_loss
-        }
+        }, self.model.state_dict()

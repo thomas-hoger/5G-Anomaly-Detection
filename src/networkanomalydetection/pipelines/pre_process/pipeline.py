@@ -63,35 +63,36 @@ def create_pipeline(**kwargs) -> Pipeline:
             outputs="initial_graph_display",
             name="graph_visualization"
         ),
-        node(
-            func=graph_sampling,
-            inputs=[
-                "initial_graph",
-                "params:window_size",
-                "params:window_shift",
-            ],
-            outputs=["subgraphs","sampling_report"],
-            name="graph_sampling"
-        ),
+        # node(
+        #     func=graph_sampling,
+        #     inputs=[
+        #         "initial_graph",
+        #         "params:window_size",
+        #         "params:window_shift",
+        #     ],
+        #     outputs=["subgraphs","sampling_report"],
+        #     name="graph_sampling"
+        # ),
         node(
             func=feature_vectorization,
             inputs=[
-                "subgraphs",
+                "initial_graph",
                 "feature_words",
-            ],
-            outputs=["vectorized_features","feature_vectorization_report"],
-            name="feature_vectorization"
-        ),
-        node(
-            func=graph_vectorization,
-            inputs=[
-                "vectorized_features",
-                "params:batch_size",
                 "params:split_ratio",
             ],
-            outputs=["data_loader_1", "data_loader_2"],
-            name="graph_vectorization"
-        )
+            outputs=["data_loader_1", "data_loader_2","feature_vectorization_report"],
+            name="feature_vectorization"
+        ),
+        # node(
+        #     func=graph_vectorization,
+        #     inputs=[
+        #         "vectorized_features",
+        #         "params:batch_size",
+        #         "params:split_ratio",
+        #     ],
+        #     outputs=["data_loader_1", "data_loader_2"],
+        #     name="graph_vectorization"
+        # )
     ])
 
 
