@@ -2,10 +2,17 @@
 Nœud Kedro pour le pipeline d'entraînement GNN
 """
 import logging
+import pickle
 
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
-from torch_geometric.loader import DataLoader
+from matplotlib import patheffects
+from sklearn.cluster import KMeans
+from sklearn.manifold import TSNE
+from sklearn.metrics.pairwise import cosine_similarity
+from torch_geometric.data import Data
+from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import GAE
 from torch_geometric.utils import negative_sampling
 
@@ -18,10 +25,9 @@ from networkanomalydetection.core.learning.train import GNNTrainer
 
 logger = logging.getLogger(__name__)
 
-
 def train_gnn_model(
-    train_loader: DataLoader,
-    val_loader: DataLoader,
+    train_loader: Data,
+    val_loader: Data,
     training_params: dict[str, any]
 ) -> dict[str, any]:
 
@@ -36,10 +42,13 @@ def train_gnn_model(
     # ------------------
     # PARAMÈTRES DU MODÈLE
     # ------------------
-    node_dim = len(train_loader.dataset[0].x[0])
-    edge_dim = len(train_loader.dataset[0].edge_attr[0])
+    node_dim = len(train_loader.x[0])
+    edge_dim = len(train_loader.edge_attr[0])
     hidden_dim = 64
     out_dim = 32
+
+    train_loader = NeighborLoader(train_loader, [30, 30], train_loader.is_central, batch_size=training_params["batch_size"],shuffle=False)
+    val_loader = NeighborLoader(val_loader, [30, 30], val_loader.is_central, batch_size=training_params["batch_size"],shuffle=False)
 
     # ------------------
     # ENCODER / DECODER
@@ -68,7 +77,7 @@ def train_gnn_model(
     # ------------------
     # ENTRAÎNEMENT
     # ------------------
-    history = trainer.train(
+    history, last_state_dict = trainer.train(
         num_epochs=training_params["num_epochs"],
         early_stopping_patience=training_params["early_stopping_patience"],
         save_path= "./data"
@@ -79,7 +88,7 @@ def train_gnn_model(
     return {
         "training_history"   : history,
         "training_params"    : training_params
-    }
+    }, last_state_dict
 
 def plot_train(history:dict):
 
@@ -93,7 +102,93 @@ def plot_train(history:dict):
     plt.grid()
     plt.savefig('./data/report/figures/gnn_training_loss.png')
 
-def test_gnn_model(test_loader: DataLoader):
+# def plot_pca_latent_space(latent_space_history:dict[str,list[dict]], histo_results:dict):
+
+#     for file, loader in latent_space_history.items():
+
+#         first_batch = next(iter(loader()))
+
+#         # compute mean cosine similarity
+#         S = cosine_similarity(first_batch.detach())
+#         mask = ~np.eye(S.shape[0], dtype=bool)
+#         mean_similarity = S[mask].mean()
+
+#         # projection 2D avec t-SNE
+#         tsne = TSNE(
+#             n_components=2,
+#             perplexity=30,
+#             learning_rate='auto',
+#             init='random',
+#             max_iter=1000,
+#             verbose=1
+#         )
+
+#         X_2d = tsne.fit_transform(first_batch.detach())
+
+#         labels = []
+#         for label_list in data_batch.label:
+#             labels += label_list
+
+#         # clustering
+#         k = 10
+#         kmeans = KMeans(n_clusters=k).fit(X_2d)
+#         cluster_ids = kmeans.labels_
+
+#         # colormap
+#         cmap = plt.get_cmap("tab20")
+#         palette = [cmap(i/(k-1)) for i in range(k)]  # normalisation [0,1]
+#         plt.figure(figsize=(12, 12))
+
+#         # scatter
+#         point_colors = [palette[c] for c in cluster_ids]
+#         plt.scatter(X_2d[:,0], X_2d[:,1], c=point_colors, s=3)
+
+#         # nombre de labels par cluster
+#         n_labels = 6
+#         for c in range(k):
+#             pts = np.where(cluster_ids==c)[0]
+#             if len(pts)==0:
+#                 continue
+
+#             # sélection jusqu'à n_labels avec label non nul
+#             selected = []
+#             for idx in pts:
+#                 lbl = labels[idx]
+#                 if lbl not in (None, "", [], 0):
+#                     selected.append(idx)
+#                 if len(selected) >= n_labels:
+#                     break
+#             if len(selected)==0:
+#                 continue
+
+#             cluster_color = palette[c]
+
+#             # annotation
+#             for i, idx in enumerate(selected):
+#                 lbl = str(labels[idx])
+#                 x, y = X_2d[idx]
+#                 offset_y = i*2  # léger décalage pour ne pas superposer
+
+#                 txt = plt.text(
+#                     x, y+offset_y, lbl,
+#                     fontsize=5,
+#                     color=cluster_color,
+#                     weight="bold",
+#                     ha="center",
+#                     va="center"
+#                 )
+
+#                 # bordure pour lisibilité
+#                 txt.set_path_effects([
+#                     patheffects.Stroke(linewidth=3, foreground="white"),
+#                     patheffects.Normal()
+#                 ])
+
+#         plt.axis("off")
+#         plt.title(f'Latent Space Visualization (t-SNE) - Mean Cosine Similarity: {mean_similarity:.4f}')
+#         plt.savefig(f'./data/report/figures/gnn_latent_space_{file}.png')
+
+def test_gnn_model(test_loader: Data, last_state_dict: dict):
 
     logger.info("Début du test du GNN")
 
@@ -103,10 +198,14 @@ def test_gnn_model(test_loader: DataLoader):
     # ------------------
     # PARAMÈTRES DU MODÈLE
     # ------------------
-    node_dim = len(test_loader.dataset[0].x[0])
-    edge_dim = len(test_loader.dataset[0].edge_attr[0])
+    node_dim = len(test_loader.x[0])
+    edge_dim = len(test_loader.edge_attr[0])
     hidden_dim = 64
     out_dim = 32
+
+    batch_size=32
+
+    test_loader = NeighborLoader(test_loader, [30, 30], test_loader.is_central, batch_size=batch_size, shuffle=False)
 
     # ------------------
     # ENCODER / DECODER
@@ -114,8 +213,7 @@ def test_gnn_model(test_loader: DataLoader):
     encoder = GINEEncoder(node_dim, edge_dim, hidden_dim, out_dim)
     model = GAE(encoder).to(device)
 
-    model_file = f"./data/checkpoints/model_{6}.pth"
-    model.load_state_dict(torch.load(model_file, weights_only=True))
+    model.load_state_dict(last_state_dict)
 
     model.eval()
     total_loss = 0
@@ -131,12 +229,14 @@ def test_gnn_model(test_loader: DataLoader):
             "TN" : 0
         }
 
+        test_z_history = []
         for batch in test_loader:
 
             batch = batch.to(device)  # noqa: PLW2901
 
             # Latent space vector
             z = model(batch.x, batch.edge_index, batch.edge_attr)
+            test_z_history.append(z)
 
             positive_edges = batch.edge_index
             positive_reconstruction = model.decoder(z, positive_edges, sigmoid=True)
@@ -146,15 +246,11 @@ def test_gnn_model(test_loader: DataLoader):
 
             for k in range(len(positive_edges.T)):
 
-                reconstruction = int(positive_reconstruction[k]
-)
+                reconstruction = int(positive_reconstruction[k])
                 u,v = positive_edges.T[k]
 
-                batch_id     = batch.batch[u]
-                batch_offset = batch.ptr[batch_id]
-
-                attack = batch.is_attack[batch_id][u-batch_offset] or batch.is_attack[batch_id][v-batch_offset]
-                attack_type = batch.type[batch_id][u-batch_offset] or batch.type[batch_id][v-batch_offset]
+                attack = batch.is_attack[u].item() > 0 or batch.is_attack[v].item() > 0
+                attack_type = batch.type[u].item() or batch.type[v].item()
 
                 if attack_type not in cfm_by_type:
                     cfm_by_type[attack_type] = cfm.copy()
@@ -170,16 +266,11 @@ def test_gnn_model(test_loader: DataLoader):
 
             for k in range(len(negative_edges.T)):
 
-                reconstruction = 1 - int(negative_reconstruction[k]
-)
+                reconstruction = 1 - int(negative_reconstruction[k])
                 u,v = negative_edges.T[k]
 
-                batch_id     = batch.batch[u]
-                batch_offset = batch.ptr[batch_id]
-
-                print(batch_id,batch_offset,u-batch_offset,v-batch_offset,len(batch.type[batch_id]))
-                attack = batch.is_attack[batch_id][u-batch_offset] or batch.is_attack[batch_id][v-batch_offset]
-                attack_type = batch.type[batch_id][u-batch_offset] or batch.type[batch_id][v-batch_offset]
+                attack = batch.is_attack[u].item() > 0 or batch.is_attack[v].item() > 0
+                attack_type = batch.type[u].item() or batch.type[v].item()
 
                 if attack_type not in cfm_by_type:
                     cfm_by_type[attack_type] = cfm.copy()
@@ -205,6 +296,12 @@ def test_gnn_model(test_loader: DataLoader):
             "f1" : cfm["TP"] / (cfm["TP"] + 0.5*(cfm["FP"] + cfm["FN"]))
         }
         metrics_by_type[type].update(cfm)
+
+    with open("./data/model_data_history/test/loader.pkl", 'wb') as f:
+        pickle.dump(test_loader, f)
+
+    with open("./data/model_data_history/test/test.pkl", 'wb') as f:
+        pickle.dump(test_z_history, f)
 
     return {
         "total_loss" : total_loss,

@@ -1,7 +1,7 @@
 import tqdm
 
 
-def dissection_clean(packet_list:list[dict], banned_features: list[str]):
+def dissection_clean(packet_list:list[dict], feature_list: list[str]):
 
     for packet in tqdm.tqdm(packet_list, desc="Clean dissected packets", unit="pkt", total=len(packet_list)):
 
@@ -17,7 +17,7 @@ def dissection_clean(packet_list:list[dict], banned_features: list[str]):
                         del layer_copy[param_name]
 
                     # If we want to ban the feature
-                    elif param_name in banned_features :
+                    elif param_name not in feature_list :
                         del layer_copy[param_name]
 
                 layers[i] = layer_copy

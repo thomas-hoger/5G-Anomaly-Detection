@@ -7,39 +7,60 @@ evil_ip: 10.100.200.66
 
 nb_cluster: 17
 
-# Banned features list
-banned_features:
-  - "versions"
-  - "scheme"
-  - "subscribedUeAmbr"
-  - "dnnInfos"
-  - "jwt.alg"
-  - "jwt.typ"
-  - "start_time"
-  - "end_time"
-  - "NAS_PDU"
-
-identifier_conversion:
-  ip_src : ip_address
-  ip_dst : ip_address
-  ipv4   : ip_address
-  nfInstanceId: nfInstanceId
-  ausfInstanceId: nfInstanceId
-  jwt.sub: nfInstanceId
-  node_id_fqdn: ipEndPoint
-  ipEndPoints: ipEndPoints
-  apiPrefix: apiPrefix
-  imsi: imsi
-  Timestamp : ts
-  jwt.iat : unix_ts
-  jwt.exp : unix_ts
-  pLMNIdentity : plmn_id
-  NRCellIdentity : nrcell_id
-  msg_auth_code : auth_code
-  teid : teid
-  seq_number : seq_number
-  amfId : amf_id
-  seid : seid
+feature_list:
+  - ip_src
+  - ip_dst
+  - outer_hdr_creation.ipv4
+  - apply_action.forw
+  - nfInstances.nfServices.serviceInstanceId
+  - nfServices.serviceInstanceId
+  - ext_hdr.pdu_ses_con.pdu_type
+  - far_id
+  - pdr_id
+  - apply_action.drop
+  - seid
+  - method
+  - path
+  - jwt.scope
+  - jwt.sub
+  - amfInstanceId
+  - nfInstanceId
+  - servingNfId
+  - target-nf-instance-id
+  - nfInstances.nfInstanceId
+  - requester-nf-type
+  - target-nf-type
+  - nf-type
+  - ueId
+  - supi
+  - request.supi
+  - supis
+  - subscriberIdentifier
+  - nfInstances.nfType
+  - nfType
+  - ausfInstanceId
+  - nfServices.ipEndPoints.ipv4Address
+  - nfServices.serviceName
+  - imsi
+  - service-names
+  - nfInstances.ipv4Addresses
+  - ipv4Addresses
+  - f_seid.ipv4
+  - ipv4Address
+  - ue_ip_addr_ipv4
+  - f_teid.ipv4_addr
+  - f_teid.teid
+  - outer_hdr_creation.teid
+  - teid
+  - smsfInstanceId
+  - cause
+  - msg_type
+  - http2
+  - ip_src
+  - ip_dst
+  - ip
+  - gtp
+  - pfcp
 
 input_tensor_dimension: 1024
 
@@ -47,6 +68,7 @@ window_size: 1000
 window_shift: 500
 
 split_ratio: 0.80
+# split_ratio: 1.0
 batch_size: 32
 
 training_params :
@@ -55,3 +77,4 @@ training_params :
   num_epochs: 100
   early_stopping_patience: 15
   log_interval: 10
+  batch_size: 32

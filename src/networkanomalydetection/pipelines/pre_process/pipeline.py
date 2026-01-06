@@ -35,13 +35,13 @@ def create_pipeline(**kwargs) -> Pipeline:
         ),
         node(
             func=dissection_cleaning,
-            inputs=["trace_dissected", "params:banned_features"],
+            inputs=["trace_dissected", "params:feature_list"],
             outputs="dissected_clean",
             name="dissection_cleaning"
         ),
         node(
             func=vocabulary_making,
-            inputs=["dissected_clean", "params:identifier_conversion", "params:nb_cluster"],
+            inputs=["dissected_clean", "params:nb_cluster"],
             outputs=["feature_words", "feature_floats"],
             name="vocabulary_making"
         ),
@@ -63,35 +63,36 @@ def create_pipeline(**kwargs) -> Pipeline:
             outputs="initial_graph_display",
             name="graph_visualization"
         ),
-        node(
-            func=graph_sampling,
-            inputs=[
-                "initial_graph",
-                "params:window_size",
-                "params:window_shift",
-            ],
-            outputs=["subgraphs","sampling_report"],
-            name="graph_sampling"
-        ),
+        # node(
+        #     func=graph_sampling,
+        #     inputs=[
+        #         "initial_graph",
+        #         "params:window_size",
+        #         "params:window_shift",
+        #     ],
+        #     outputs=["subgraphs","sampling_report"],
+        #     name="graph_sampling"
+        # ),
         node(
             func=feature_vectorization,
             inputs=[
-                "subgraphs",
-                "feature_words",
-            ],
-            outputs=["vectorized_features","feature_vectorization_report"],
-            name="feature_vectorization"
-        ),
-        node(
-            func=graph_vectorization,
-            inputs=[
-                "vectorized_features",
-                "params:batch_size",
+                "initial_graph",
+                "params:feature_list",
                 "params:split_ratio",
             ],
-            outputs=["data_loader_1", "data_loader_2"],
-            name="graph_vectorization"
-        )
+            outputs=["data_loader_1", "data_loader_2","feature_vectorization_report"],
+            name="feature_vectorization"
+        ),
+        # node(
+        #     func=graph_vectorization,
+        #     inputs=[
+        #         "vectorized_features",
+        #         "params:batch_size",
+        #         "params:split_ratio",
+        #     ],
+        #     outputs=["data_loader_1", "data_loader_2"],
+        #     name="graph_vectorization"
+        # )
     ])
 
 

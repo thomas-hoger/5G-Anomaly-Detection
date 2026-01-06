@@ -4,6 +4,9 @@ nohup.out
 ##########################
 # KEDRO PROJECT
 
+old
+nohup.out
+
 # ignore all local configuration
 conf/local/**
 !conf/local/.gitkeep
