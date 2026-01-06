@@ -8,7 +8,7 @@ from networkanomalydetection.core.dissection.dissect_packet import dissect_packe
 from networkanomalydetection.core.dissection_clean import dissection_clean
 from networkanomalydetection.core.dissection_clusterize import clusterize
 from networkanomalydetection.core.feature_vectorization import vectorize_features
-from networkanomalydetection.core.graph.construction import build_graph
+from networkanomalydetection.core.graph.construction import NodeType, build_graph
 from networkanomalydetection.core.graph.sampling import generate_subgraphs
 from networkanomalydetection.core.graph.visualization import graph_to_html
 from networkanomalydetection.core.trace_cleaning_labelling import process
@@ -50,14 +50,14 @@ def dissection_cleaning(dissected_files:dict[str,list[dict]], banned_features: l
 
     return dissected_clean_files
 
-def vocabulary_making(dissected_files:dict[str,list[dict]], identifier_features:dict[str:str], nb_cluster:int):
+def vocabulary_making(dissected_files:dict[str,list[dict]], nb_cluster:int):
 
     words  = {}
     floats = {}
 
     for file, trace_loader in dissected_files.items():
 
-        new_words, new_floats = get_vocabulary(trace_loader(), identifier_features, nb_cluster)
+        new_words, new_floats = get_vocabulary(trace_loader(), nb_cluster)
         words[file]  = list(set(new_words))
         floats[file] = list(set(new_floats))
 
@@ -113,11 +113,7 @@ def graph_sampling(graph_files:dict, window_size:int, window_shift:int):
 
     return subgraph_files, reporting
 
-def feature_vectorization(graph_files:dict, word_files:dict, split_ratio:int):
-
-    feature_words = []
-    for _, loader in word_files.items():
-        feature_words += loader()
+def feature_vectorization(graph_files:dict, feature_words:list, split_ratio:int):
 
     reporting_files = {}
 
@@ -125,32 +121,53 @@ def feature_vectorization(graph_files:dict, word_files:dict, split_ratio:int):
 
         graph = graph_loader()
         max_packet_id = max(nx.get_node_attributes(graph, "packet_id").values())
-        packet_id_threshold = int(max_packet_id * split_ratio)
 
-        # Train graph vectorization
-        train_nodes = [
-            node for node, attr in graph.nodes(data=True)
-            if attr["packet_id"] <= packet_id_threshold
-        ]
-        graph_train = graph.subgraph(train_nodes)
-        data_train, unique_features_train = vectorize_features(graph_train, feature_words)
+        if split_ratio < 1:
+            packet_id_threshold = int(max_packet_id * split_ratio)
 
-        # Val graph vectorization
-        validation_nodes = [
-            node for node, attr in graph.nodes(data=True)
-            if attr["packet_id"] > packet_id_threshold
-        ]
-        graph_validation = graph.subgraph(validation_nodes)
-        data_val, unique_features_val = vectorize_features(graph_validation, feature_words)
+            # Train graph vectorization
+            train_nodes = [
+                node for node, attr in graph.nodes(data=True)
+                if attr["packet_id"] <= packet_id_threshold
+            ]
+            graph_train = graph.subgraph(train_nodes)
+            data_train, unique_features_train = vectorize_features(graph_train, feature_words)
 
-        reporting = {
-            "number_of_nodes_train" : len(graph_train.nodes),
-            "number_of_edges_train" : len(graph_train.edges),
-            "unique_features_train" : len(unique_features_train),
-            "number_of_nodes_val"   : len(graph_validation.nodes),
-            "number_of_edges_val"   : len(graph_validation.edges),
-            "unique_features_val"   : len(unique_features_val)
-        }
+            # Val graph vectorization
+            validation_nodes = [
+                node for node, attr in graph.nodes(data=True)
+                if attr["packet_id"] > packet_id_threshold and
+                attr["node_type"] == NodeType.CENTRAL.value
+            ]
+
+            print(f"\nSampling neighbors for validation nodes... {len(validation_nodes)} central_nodes")
+            for node in tqdm.tqdm(validation_nodes[:-10], desc="Adding neighbors to validation set", unit="node"):
+                for neighbor in graph.neighbors(node):
+                    if neighbor not in validation_nodes:
+                        validation_nodes.append(neighbor)
+            print(f"\nTotal validation nodes... {len(validation_nodes)}")
+
+            graph_validation = graph.subgraph(validation_nodes)
+            data_val, unique_features_val = vectorize_features(graph_validation, feature_words)
+
+            reporting = {
+                "number_of_nodes_train" : len(graph_train.nodes),
+                "number_of_edges_train" : len(graph_train.edges),
+                "unique_features_train" : len(unique_features_train),
+                "number_of_nodes_val"   : len(graph_validation.nodes),
+                "number_of_edges_val"   : len(graph_validation.edges),
+                "unique_features_val"   : len(unique_features_val)
+            }
+
+        else:
+            data_train, unique_features_train = vectorize_features(graph, feature_words)
+            data_val = Data()
+
+            reporting = {
+                "number_of_nodes_train" : len(graph.nodes),
+                "number_of_edges_train" : len(graph.edges),
+                "unique_features_train" : len(unique_features_train)
+            }
 
         reporting_files[file] = reporting
 
@@ -177,9 +194,16 @@ def graph_vectorization(graph_files:dict, batch_size:int, split_ratio:int):
 
         validation_nodes = [
             node for node, attr in graph.nodes(data=True)
-            if attr["packet_id"] > packet_id_threshold
+            if attr["packet_id"] > packet_id_threshold and
+            attr["node_type"] == NodeType.CENTRAL.value
         ]
 
+        print(f"\nSampling neighbors for validation nodes... {validation_nodes} central_nodes")
+        for node in tqdm(validation_nodes):
+            for neighbor in graph.neighbors(node):
+                if neighbor not in validation_nodes:
+                    validation_nodes.append(neighbor)
+        print(f"\nTotal validation nodes... {validation_nodes}")
 
         graph_validation = graph.subgraph(validation_nodes)
         data_validation = from_networkx(graph_validation, None, group_edge_attrs=["embedding"])

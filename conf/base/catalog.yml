@@ -158,3 +158,23 @@ gnn_testing_results:
 last_state_dict:
   type: pickle.PickleDataset 
   filepath: data/checkpoints/best.pkl
+
+# ==== 9) evaluation
+
+train_z_history:
+  type: partitions.PartitionedDataset
+  path: data/model_data_history/train
+  dataset:
+    type: pickle.PickleDataset 
+
+val_z_history:
+  type: partitions.PartitionedDataset
+  path: data/model_data_history/val
+  dataset:
+    type: pickle.PickleDataset 
+
+test_z_history:
+  type: partitions.PartitionedDataset
+  path: data/model_data_history/test
+  dataset:
+    type: pickle.PickleDataset 

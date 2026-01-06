@@ -3,7 +3,7 @@ Pipeline d'entraînement GNN pour détection d'anomalies
 """
 from kedro.pipeline import Pipeline, node, pipeline
 
-from .nodes import plot_train, test_gnn_model, train_gnn_model
+from .nodes import plot_train, test_gnn_model, train_gnn_model#, plot_pca_latent_space
 
 
 def create_pipeline(**kwargs) -> Pipeline:
@@ -26,4 +26,22 @@ def create_pipeline(**kwargs) -> Pipeline:
             outputs="gnn_testing_results",
             name="test_gnn"
         ),
+        # node(
+        #     func=plot_pca_latent_space,
+        #     inputs=["train_z_history","gnn_training_results"],
+        #     outputs=None,
+        #     name="plot_latent_space_train"
+        # ),
+        # node(
+        #     func=plot_pca_latent_space,
+        #     inputs=["val_z_history","gnn_training_results"],
+        #     outputs=None,
+        #     name="plot_latent_space_val"
+        # ),
+        # node(
+        #     func=plot_pca_latent_space,
+        #     inputs=["test_z_history","gnn_testing_results"],
+        #     outputs=None,
+        #     name="plot_latent_space_test"
+        # ),
     ])

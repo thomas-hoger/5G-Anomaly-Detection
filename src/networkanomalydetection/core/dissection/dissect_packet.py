@@ -96,7 +96,7 @@ def dissect_packet(packet: Packet) -> dict:
 
     second_ip_layer_present = False
     for layer in packet.layers:
-        for protocol in ["gtp", "ngap", "nas-5gs", "pfcp"]:
+        for protocol in ["gtp", "pfcp"]: # "ngap", "nas-5gs"
             if layer.layer_name == protocol:
 
                 if protocol not in packet_informations["protocols"]:

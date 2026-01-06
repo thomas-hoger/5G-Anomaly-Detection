@@ -35,13 +35,13 @@ def create_pipeline(**kwargs) -> Pipeline:
         ),
         node(
             func=dissection_cleaning,
-            inputs=["trace_dissected", "params:banned_features"],
+            inputs=["trace_dissected", "params:feature_list"],
             outputs="dissected_clean",
             name="dissection_cleaning"
         ),
         node(
             func=vocabulary_making,
-            inputs=["dissected_clean", "params:identifier_conversion", "params:nb_cluster"],
+            inputs=["dissected_clean", "params:nb_cluster"],
             outputs=["feature_words", "feature_floats"],
             name="vocabulary_making"
         ),
@@ -77,7 +77,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             func=feature_vectorization,
             inputs=[
                 "initial_graph",
-                "feature_words",
+                "params:feature_list",
                 "params:split_ratio",
             ],
             outputs=["data_loader_1", "data_loader_2","feature_vectorization_report"],

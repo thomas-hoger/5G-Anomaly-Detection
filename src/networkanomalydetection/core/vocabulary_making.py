@@ -26,11 +26,11 @@ def find_feature_identifier(label:str, identifier_features: dict[str:str]):
     else :
         return None
 
-def get_vocabulary(packet_list:list[dict], identifier_features: dict[str:str], nb_cluster:int) -> tuple[list,list]:
+def get_vocabulary(packet_list:list[dict], nb_cluster:int) -> tuple[list,list]:
 
     float_encountered = []
-    word_encountered  = ["gtp", "ngap", "nas-5gs", "pfcp", "http2", "ip_src", "ip_dst", "ip"]
-    word_encountered += [str(i) for i in range(nb_cluster)]
+    word_encountered  = ["gtp", "pfcp", "http2", "ip_src", "ip_dst", "ip"] # "ngap", "nas-5gs",
+    # word_encountered += [str(i) for i in range(nb_cluster)]
 
     for packet in tqdm.tqdm(packet_list, desc="Get vocabulary", unit="pkt", total=len(packet_list)):
 
@@ -41,7 +41,7 @@ def get_vocabulary(packet_list:list[dict], identifier_features: dict[str:str], n
                 for param_name, param_value in layer.items():
 
                     param_value = str(param_value)  # noqa: PLW2901
-                    found_feature = find_feature_identifier(param_name, identifier_features)
+                    # found_feature = find_feature_identifier(param_name, identifier_features)
 
                     # Integers
                     if is_float(param_value):

@@ -4,7 +4,6 @@ import pickle
 import torch
 from torch import nn, optim
 from torch_geometric.loader import DataLoader
-from torch_geometric.utils import negative_sampling
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
@@ -50,28 +49,57 @@ class GNNTrainer:
     # -----------------------------------------------------------
     def train_epoch(self):
         self.model.train()
-        self.optimizer.zero_grad()
+        total_loss = 0
+        num_batches = 0
 
-        z = self.model(self.train_loader.x, self.train_loader.edge_index, self.train_loader.edge_attr.float())
-        loss = self.model.recon_loss(z, self.train_loader.edge_index)
+        train_bar = tqdm(self.train_loader, desc="Training", leave=False, ncols=100)
+        latent_space_history = []
 
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-        self.optimizer.step()
+        for batch in train_bar:
+            batch = batch.to(self.device)  # noqa: PLW2901
+            self.optimizer.zero_grad()
 
-        return loss.item(), z
+            z = self.model(batch.x, batch.edge_index, batch.edge_attr)
+            latent_space_history.append(z)
+
+            loss = self.model.recon_loss(z, batch.edge_index)
+
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+            self.optimizer.step()
+
+            total_loss  += loss.item()
+            num_batches += 1
+
+            train_bar.set_postfix({"loss": f"{loss.item():.4f}"})
+
+        return total_loss / num_batches, latent_space_history
 
     # -----------------------------------------------------------
     # VALIDATION STEP
     # -----------------------------------------------------------
     def validate_epoch(self):
-
         self.model.eval()
-        with torch.no_grad():
-            z = self.model(self.val_loader.x, self.val_loader.edge_index, self.val_loader.edge_attr)
-            loss = self.model.recon_loss(z, self.val_loader.edge_index)
+        total_loss = 0
+        num_batches = 0
 
-        return loss.item(), z
+        val_bar = tqdm(self.val_loader, desc="Validation", leave=False, ncols=100)
+        latent_space_history = []
+
+        with torch.no_grad():
+            for batch in val_bar:
+                batch = batch.to(self.device)  # noqa: PLW2901
+
+                z = self.model(batch.x, batch.edge_index, batch.edge_attr)
+
+                latent_space_history.append(z)
+                loss = self.model.recon_loss(z, batch.edge_index)
+
+                total_loss += loss.item()
+                num_batches += 1
+                val_bar.set_postfix({"val_loss": f"{loss.item():.4f}"})
+
+        return total_loss / num_batches, latent_space_history
 
     # -----------------------------------------------------------
     # TRAIN LOOP
@@ -84,18 +112,21 @@ class GNNTrainer:
         logger.info(f"Début entraînement: {num_epochs} époques")
         logger.info(f"Device: {self.device}")
 
+        # Initial validation before training
+        val_loss, val_z_history = self.validate_epoch()
+        with open(f"{save_path}/model_data_history/val/val_init.pkl", 'wb') as f:
+            pickle.dump(val_z_history, f)
+
         epoch_bar = tqdm(range(num_epochs), desc="Training Progress", unit="epoch", ncols=120)
+
         for epoch in epoch_bar:
-
-            # train
-            train_loss, z_train = self.train_epoch()
-            self.train_history.append(train_loss)
-
-            # val
-            val_loss, z_val = self.validate_epoch()
-            self.val_history.append(val_loss)
+            train_loss, train_z_history = self.train_epoch()
+            val_loss, val_z_history     = self.validate_epoch()
 
             self.scheduler.step(val_loss)
+
+            self.train_history.append(train_loss)
+            self.val_history.append(val_loss)
             lr = self.optimizer.param_groups[0]['lr']
             self.lr_history.append(lr)
 
@@ -114,10 +145,10 @@ class GNNTrainer:
                     save_file = f"{save_path}/checkpoints/model_{epoch}.pth"
                     torch.save(self.model.state_dict(), save_file)
 
-                    with open(f"{save_path}/model_data_history/train/{epoch}.pkl", 'wb') as f:
-                        pickle.dump(z_train, f)
-                    with open(f"{save_path}/model_data_history/val/{epoch}.pkl", 'wb') as f:
-                        pickle.dump(z_val, f)
+                    with open(f"{save_path}/model_data_history/train/train_{epoch}.pkl", 'wb') as f:
+                        pickle.dump(train_z_history, f)
+                    with open(f"{save_path}/model_data_history/val/val_{epoch}.pkl", 'wb') as f:
+                        pickle.dump(val_z_history, f)
 
             else:
                 self.patience_counter += 1
